@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967B299C190B00DFAEAE /* GoodNetworking */; };
+		5D4A967E299C190B00DFAEAE /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967D299C190B00DFAEAE /* Mockable */; };
 		EA751BAD299649C7004016E1 /* UINavigationBarExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA751BAC299649C7004016E1 /* UINavigationBarExtensions.swift */; };
 		EA751BB829969285004016E1 /* MultiLineLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA751BB729969285004016E1 /* MultiLineLabel.swift */; };
 		EACEC3FA29953DCB008242AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC3F929953DCB008242AA /* AppDelegate.swift */; };
@@ -14,7 +16,6 @@
 		EACEC40829953DCD008242AA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EACEC40629953DCD008242AA /* LaunchScreen.storyboard */; };
 		EACEC41229953DFA008242AA /* RequestManagerType.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC41129953DFA008242AA /* RequestManagerType.swift */; };
 		EACEC41429953E08008242AA /* RequestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC41329953E08008242AA /* RequestManager.swift */; };
-		EACEC41829953E7C008242AA /* GoodNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = EACEC41729953E7C008242AA /* GoodNetworking */; };
 		EACEC41A29953EFD008242AA /* Endpoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC41929953EFD008242AA /* Endpoint.swift */; };
 		EACEC41C29954853008242AA /* Coordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC41B29954853008242AA /* Coordinator.swift */; };
 		EACEC42229954B74008242AA /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC42029954B74008242AA /* HomeViewModel.swift */; };
@@ -37,6 +38,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5D4A967A299C18FB00DFAEAE /* GoodNetworking */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = GoodNetworking; path = ..; sourceTree = "<group>"; };
 		EA751BAC299649C7004016E1 /* UINavigationBarExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UINavigationBarExtensions.swift; sourceTree = "<group>"; };
 		EA751BB729969285004016E1 /* MultiLineLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiLineLabel.swift; sourceTree = "<group>"; };
 		EACEC3F629953DCB008242AA /* GoodNetworking-Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GoodNetworking-Sample.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -46,7 +48,6 @@
 		EACEC40929953DCD008242AA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EACEC41129953DFA008242AA /* RequestManagerType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestManagerType.swift; sourceTree = "<group>"; };
 		EACEC41329953E08008242AA /* RequestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestManager.swift; sourceTree = "<group>"; };
-		EACEC41529953E6B008242AA /* .. */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = ..; sourceTree = "<group>"; };
 		EACEC41929953EFD008242AA /* Endpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Endpoint.swift; sourceTree = "<group>"; };
 		EACEC41B29954853008242AA /* Coordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Coordinator.swift; sourceTree = "<group>"; };
 		EACEC42029954B74008242AA /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
@@ -73,13 +74,22 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EACEC41829953E7C008242AA /* GoodNetworking in Frameworks */,
+				5D4A967E299C190B00DFAEAE /* Mockable in Frameworks */,
+				5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5D4A9679299C18FB00DFAEAE /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				5D4A967A299C18FB00DFAEAE /* GoodNetworking */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
 		EA751BB629969274004016E1 /* UILabel */ = {
 			isa = PBXGroup;
 			children = (
@@ -91,7 +101,7 @@
 		EACEC3ED29953DCB008242AA = {
 			isa = PBXGroup;
 			children = (
-				EACEC41529953E6B008242AA /* .. */,
+				5D4A9679299C18FB00DFAEAE /* Packages */,
 				EACEC3F829953DCB008242AA /* GoodNetworking-Sample */,
 				EACEC3F729953DCB008242AA /* Products */,
 				EACEC41629953E7C008242AA /* Frameworks */,
@@ -292,7 +302,8 @@
 			);
 			name = "GoodNetworking-Sample";
 			packageProductDependencies = (
-				EACEC41729953E7C008242AA /* GoodNetworking */,
+				5D4A967B299C190B00DFAEAE /* GoodNetworking */,
+				5D4A967D299C190B00DFAEAE /* Mockable */,
 			);
 			productName = "GoodNetworking-Sample";
 			productReference = EACEC3F629953DCB008242AA /* GoodNetworking-Sample.app */;
@@ -589,9 +600,13 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		EACEC41729953E7C008242AA /* GoodNetworking */ = {
+		5D4A967B299C190B00DFAEAE /* GoodNetworking */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GoodNetworking;
+		};
+		5D4A967D299C190B00DFAEAE /* Mockable */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Mockable;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
