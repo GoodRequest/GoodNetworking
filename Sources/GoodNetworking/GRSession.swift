@@ -165,7 +165,16 @@ private extension GRSession {
             bodyData = params
 
         case .model(let encodable)?:
-            bodyData = encodable.jsonDictionary
+            if let jsonDictionary = (encodable as? Encodable & WithCustomEncoder)?.jsonDictionary {
+                bodyData = jsonDictionary
+            } else {
+                let encoder = JSONEncoder()
+                
+                guard let data = try? encoder.encode(encodable) else { return (path, nil) }
+
+                bodyData = (try? JSONSerialization.jsonObject(with: data, options: .allowFragments))
+                    .flatMap { $0 as? [String: Any] }
+            }
 
         default:
             break

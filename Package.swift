@@ -46,7 +46,9 @@ let package = Package(
             resources:
                 [
                     .copy("Resources/EmptyElement.json"),
-                    .copy("Resources/ArrayNil.json")
+                    .copy("Resources/ArrayNil.json"),
+                    .copy("Resources/IsoDate.json"),
+                    .copy("Resources/MilisecondsDate.json")
                 ]
         ),
     ]
