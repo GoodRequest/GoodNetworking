@@ -1,5 +1,5 @@
 //
-//  GREndpointManager.swift
+//  GREndPointManagerProtocol.swift
 //
 
 import Alamofire
