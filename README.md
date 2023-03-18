@@ -27,7 +27,7 @@ import PackageDescription
 let package = Package(
     name: "SampleProject",
     dependencies: [
-        .Package(url: "https://github.com/GoodRequest/GoodNetworking" from: "addVersion")
+        .package(url: "https://github.com/GoodRequest/GoodNetworking" from: "addVersion")
     ]
 )
 ```

@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  GRSessionConfiguration.swift
 //
 //
 //  Created by Andrej Jasso on 15/11/2022.
