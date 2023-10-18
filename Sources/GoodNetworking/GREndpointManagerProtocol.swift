@@ -40,4 +40,5 @@ public enum EndpointParameters {
     /// Case for sending an instance of `Encodable`.
     case model(Encodable)
     
+    
 }

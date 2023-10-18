@@ -11,31 +11,34 @@ import Foundation
 
 public protocol WithCustomEncoder {
     
-    var encoder: JSONEncoder { get }
-    var keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy { get }
-    var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy { get }
+    static var encoder: JSONEncoder { get }
+    static var keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy { get }
+    static var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy { get }
     
 }
 
 public extension Encodable where Self: WithCustomEncoder {
     
     /// The `keyEncodingStrategy` property returns the default key encoding strategy of the `JSONEncoder`.
-    var keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy {
+    static var keyEncodingStrategy: JSONEncoder.KeyEncodingStrategy {
         return JSONEncoder.KeyEncodingStrategy.useDefaultKeys
     }
     
     /// The `dateEncodingStrategy` property returns the default date encoding strategy of the `JSONEncoder`.
-    var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy {
+    static var dateEncodingStrategy: JSONEncoder.DateEncodingStrategy {
         return JSONEncoder.DateEncodingStrategy.millisecondsSince1970
     }
     
     /// The `encoder` property returns an instance of `JSONEncoder` with the `keyEncodingStrategy` and `dateEncodingStrategy` properties set.
-     var encoder: JSONEncoder {
+    static var encoder: JSONEncoder {
          let encoder = JSONEncoder()
          encoder.keyEncodingStrategy = keyEncodingStrategy
          encoder.dateEncodingStrategy = dateEncodingStrategy
          return encoder
      }
+    
+    /// Encoder instance
+    var encoder: JSONEncoder { Self.encoder }
     
     /// The `encode` method returns `Data` representation of the `Encodable` object.
     /// - Throws: An error if encoding fails.

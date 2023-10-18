@@ -34,12 +34,6 @@ open class GRSessionLogger: EventMonitor {
             }
         }
 
-        // Logs the request body
-        if let body = response.request?.httpBody,
-           let string = String(data: body, encoding: String.Encoding.utf8), !string.isEmpty {
-            logVerbose("📦 \(string)")
-        }
-
         // Logs the response status code
         if let response = response.response {
             switch response.statusCode {
@@ -66,6 +60,15 @@ open class GRSessionLogger: EventMonitor {
             logError("‼️ [\(error.domain) \(error.code)] \(error.localizedDescription)")
         } else if let error = response.error {
             logError("‼️ \(error)")
+        }
+    }
+    
+    public func request(_ request: Request, didResumeTask task: URLSessionTask) {
+     
+        // Logs the request body
+        if let body = task.currentRequest?.httpBody,
+           let string = String(data: body, encoding: String.Encoding.utf8), !string.isEmpty {
+            logVerbose("📦 \(string)")
         }
     }
 

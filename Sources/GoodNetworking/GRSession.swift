@@ -119,39 +119,10 @@ public extension GRSession {
             headers: endpoint.headers
         )
     }
-
-}
-
-/// Represents a URL endpoint that is a combination of a base URL and an endpoint conforming to GREndpointManager protocol.
-/// The class implements the URLConvertible protocol, which allows the resulting endpoint URL to be converted to a URL instance.
-public class EndpointConvertible: URLConvertible {
-
-    let baseURL: String
-    let endpoint: GREndpointManager
-
-    init(endpoint: GREndpointManager, baseURL: String) {
-        self.baseURL = baseURL
-        self.endpoint = endpoint
-    }
-
-    /// Creates a URL from the baseURL and endpoint path.
-    ///
-    /// - Throws: An error if the baseURL can't be converted to a URL object.
-    /// - Returns: Returns a URL object created from the baseURL and endpoint path.
-    public func asURL() throws -> URL {
-        var url = try baseURL.asURL()
-        url.appendPathComponent(endpoint.path)
-        return url
-    }
-
-}
-
-// MARK: - Request Builder
-
-private extension GRSession {
+    
 
     /// Endpoint builder function that creates a URL and a dictionary of body parameters for an API call.
-    /// 
+    ///
     /// - Parameters:
     ///   - endpoint: The endpoint to be built.
     ///   - base: Optional base URL string to use instead of the default base URL. Defaul is `nil`
@@ -181,6 +152,32 @@ private extension GRSession {
         }
 
         return (path, bodyData)
+    }
+
+}
+
+
+
+/// Represents a URL endpoint that is a combination of a base URL and an endpoint conforming to GREndpointManager protocol.
+/// The class implements the URLConvertible protocol, which allows the resulting endpoint URL to be converted to a URL instance.
+public class EndpointConvertible: URLConvertible {
+
+    let baseURL: String
+    let endpoint: GREndpointManager
+
+    init(endpoint: GREndpointManager, baseURL: String) {
+        self.baseURL = baseURL
+        self.endpoint = endpoint
+    }
+
+    /// Creates a URL from the baseURL and endpoint path.
+    ///
+    /// - Throws: An error if the baseURL can't be converted to a URL object.
+    /// - Returns: Returns a URL object created from the baseURL and endpoint path.
+    public func asURL() throws -> URL {
+        var url = try baseURL.asURL()
+        url.appendPathComponent(endpoint.path)
+        return url
     }
 
 }
