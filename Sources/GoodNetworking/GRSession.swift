@@ -42,8 +42,9 @@ open class GRSession<T: GREndpointManager, BaseURL: RawRepresentable> where Base
     ///   - endpoint: A GREndpoint instance representing the endpoint.
     ///   - base: An optional BaseURL instance representing the base URL. If not provided, the default `baseURL` property will be used.
     /// - Returns: A DataRequest object that is ready to be executed.
-    public func request(endpoint: T, base: BaseURL? = nil) -> DataRequest {
-        let builder = endpointBuilder(endpoint: endpoint, base: base?.rawValue ?? baseURL)
+    public func request(endpoint: T, base: (BaseURL?, String?)? = nil) -> DataRequest {
+        let baseURLString = base?.0?.rawValue ?? base?.1 ?? baseURL
+        let builder = endpointBuilder(endpoint: endpoint, base: baseURLString)
 
         return session.request(
             builder.url ?? URL(fileURLWithPath: ""),
