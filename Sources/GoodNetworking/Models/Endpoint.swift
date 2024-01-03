@@ -40,7 +40,7 @@ public protocol Endpoint {
 /// Enum that represents the type of parameters to be sent with the request.
 public enum EndpointParameters {
 
-    typealias CustomEncodable = (Encodable & WithCustomEncoder)
+    public typealias CustomEncodable = (Encodable & WithCustomEncoder)
 
     /// Case for sending `Parameters`.
     case parameters(Parameters)
@@ -48,7 +48,7 @@ public enum EndpointParameters {
     /// Case for sending an instance of `Encodable`.
     case model(Encodable)
 
-    var dictionary: Parameters? {
+    public var dictionary: Parameters? {
         switch self {
         case .parameters(let parameters):
             return parameters

@@ -1,6 +1,6 @@
 //
 //  ArrayEncoding.swift
-//  
+//  GoodNetworking
 //
 //  Created by Andrej Jasso on 18/10/2023.
 //
@@ -55,8 +55,8 @@ final class ArrayEncodingTests: XCTestCase {
     var testCancellable: AnyCancellable?
 
     func testGRSessionPostWithTopArrayJSON() {
-        let session = GRSession<Endpoint, Base>(baseURL: .base, configuration: .default)
-        let request: AnyPublisher<EmptyResponse,AFError> = session.request(endpoint: .unkeyedTopLevelList(MyStruct.sample))
+        let session = NetworkSession(baseUrl: Base.base.rawValue, configuration: .default)
+        let request: AnyPublisher<EmptyResponse,AFError> = session.request(endpoint: TestEndpoint.unkeyedTopLevelList(MyStruct.sample))
             .goodify(type: EmptyResponse.self)
         let requestExpectation = expectation(description: "Request Expectation")
 
@@ -76,11 +76,12 @@ final class ArrayEncodingTests: XCTestCase {
     }
     
     func testEndpointBuilder() {
-        let session = GRSession<Endpoint, Base>(baseURL: .base, configuration: .default)
-        let urlBodyTupple = session.endpointBuilder(endpoint: .unkeyedTopLevelList(MyStruct.sample))
-        
-        XCTAssert(urlBodyTupple.body != nil, "URL Body is nil")
-        XCTAssert(urlBodyTupple.url != nil, "URL is nil")
+        let session = NetworkSession(baseUrl: Base.base.rawValue, configuration: .default)
+        let dictionary = TestEndpoint.unkeyedTopLevelList(MyStruct.sample).parameters?.dictionary
+        let url = try? TestEndpoint.unkeyedTopLevelList(MyStruct.sample).url(on: Base.base.rawValue)
+
+        XCTAssert(dictionary != nil, "URL Body is nil")
+        XCTAssert(url != nil, "URL is nil")
     }
     
     // MARK: - Test Array Object Validity JSON
