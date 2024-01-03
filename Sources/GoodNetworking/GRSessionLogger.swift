@@ -80,7 +80,7 @@ private extension GRSessionLogger {
     /// Logs an error message, if the `GRSessionConfiguration.logLevel` is not set to `.none`.
     /// - Parameter text: The text to log.
     func logError(_ text: String) {
-        guard GRSessionConfiguration.logLevel != .none else { return }
+        guard NetworkSessionConfiguration.logLevel != .none else { return }
 
         print(text)
     }
@@ -88,9 +88,9 @@ private extension GRSessionLogger {
     /// Logs an informational message, if the `GRSessionConfiguration.logLevel` is set to `.info` or `.verbose`.
     /// - Parameter text: The text to log.
     func logInfo(_ text: String) {
-        guard GRSessionConfiguration.logLevel != .none else { return }
+        guard NetworkSessionConfiguration.logLevel != .none else { return }
 
-        if GRSessionConfiguration.logLevel != .error {
+        if NetworkSessionConfiguration.logLevel != .error {
             print(text)
         }
     }
@@ -98,9 +98,9 @@ private extension GRSessionLogger {
     /// Logs a verbose message, if the `GRSessionConfiguration.logLevel` is set to `.verbose`.
     /// - Parameter text: The text to log.
     func logVerbose(_ text: String) {
-        guard GRSessionConfiguration.logLevel != .none else { return }
+        guard NetworkSessionConfiguration.logLevel != .none else { return }
 
-        if GRSessionConfiguration.logLevel == .verbose {
+        if NetworkSessionConfiguration.logLevel == .verbose {
             print(text)
         }
     }

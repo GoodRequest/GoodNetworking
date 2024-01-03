@@ -9,7 +9,7 @@ import Foundation
 import Alamofire
 
 /// The GRSessionConfiguration class represents the configuration used to create a GRSession object. This class has the following properties:
-open class GRSessionConfiguration {
+public final class NetworkSessionConfiguration {
 
     // MARK: - Enums
 
@@ -18,7 +18,7 @@ open class GRSessionConfiguration {
     /// error - prints only when error occurs
     /// info - prints request url with response status and error when occurs
     /// verbose - prints everything including request body and response object
-    public enum GRSessionLogLevel {
+    public enum LogLevel {
 
         case error
         case info
@@ -65,14 +65,26 @@ open class GRSessionConfiguration {
     // MARK: - Static
 
     /// The log level of the session, determines what kind of information will be logged by the `GRSessionLogger` class.
-    public static var logLevel: GRSessionLogLevel = .verbose
+    public static var logLevel: LogLevel = .verbose
 
     /// The default configuration for a `GRSession` object.
-    public static let `default` = GRSessionConfiguration(
+    public static let `default` = NetworkSessionConfiguration(
         urlSessionConfiguration: .default,
         interceptor: nil,
         serverTrustManager: nil,
         eventMonitors: [GRSessionLogger()]
     )
+
+}
+
+// MARK: - Compatibility
+
+@available(*, deprecated, renamed: "NetworkSessionConfiguration", message: "Renamed to NetworkSessionConfiguration.")
+public typealias GRSessionConfiguration = NetworkSessionConfiguration
+
+extension NetworkSessionConfiguration {
+
+    @available(*, deprecated, renamed: "LogLevel", message: "Renamed to LogLevel.")
+    public typealias GRSessionLogLevel = LogLevel
 
 }
