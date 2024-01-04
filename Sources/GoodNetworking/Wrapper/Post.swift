@@ -1,6 +1,6 @@
 //
 //  Post.swift
-//  requestWrapper
+//  GoodNetworking
 //
 //  Created by Filip Šašala on 03/01/2024.
 //
@@ -15,6 +15,12 @@ import SwiftUI
 ///
 /// When response data is required at the moment of initialization (eg. when a screen is presented),
 /// using ``Fetch`` is preferred, as the result is non-optional.
+///
+/// Resulting data has 4 possible states:
+///  - none (no request has been sent yet)
+///  - loading (request is being processed)
+///  - success (request succeeded, state has associated value containing the response)
+///  - failure (request failed, state has associated value containing the error)
 ///
 /// Usage with async/await API:
 /// ```swift
@@ -44,7 +50,7 @@ import SwiftUI
     @ObservedObject @Observable private var observableQuery: Q?
     @ObservedObject @Observable private var dataTask: AnyCancellable?
 
-    private var session: NetworkSession
+    private let session: NetworkSession
 
     public var wrappedValue: Q? {
         get { observableQuery }
@@ -73,19 +79,7 @@ import SwiftUI
     }
 
     private func makeDataTask(from query: Q) -> AnyCancellable {
-        let endpoint = Q.endpoint(query)
-
-        return session.request(endpoint: endpoint)
-            .goodify(type: Q.Result.self)
-            .receive(on: DispatchQueue.main)
-            .map { .success($0) }
-            .catch { Just(.failure($0)) }
-        #if canImport(GoodStructs)
-            .prepend(.loading)
-        #endif
-        #if DEBUG
-            .throttle(for: 1, scheduler: RunLoop.main, latest: true)
-        #endif
+        query.dataTaskPublisher(using: session)
             .sink { [self] in observableQuery?.result = $0 }
     }
 
@@ -101,13 +95,13 @@ public extension Post where Q: Query {
 
         for await result in resultPublisher.values {
             switch result {
+            case .none:
+                continue
+
             #if canImport(GoodStructs)
             case .loading:
                 continue
             #endif
-
-            case .none:
-                continue
 
             case .success(let result):
                 return result

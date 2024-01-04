@@ -2,8 +2,8 @@
 
 # GoodNetworking
 
-[![iOS Version](https://img.shields.io/badge/iOS_Version->=_12.0-brightgreen?logo=apple&logoColor=green)]() 
-[![Swift Version](https://img.shields.io/badge/Swift_Version-5.5-green?logo=swift)](https://docs.swift.org/swift-book/)
+[![iOS Version](https://img.shields.io/badge/iOS_Version->=_13.0-brightgreen?logo=apple&logoColor=green)]() 
+[![Swift Version](https://img.shields.io/badge/Swift_Version-5.9-green?logo=swift)](https://docs.swift.org/swift-book/)
 [![Supported devices](https://img.shields.io/badge/Supported_Devices-iPhone/iPad-green)]()
 [![Contains Test](https://img.shields.io/badge/Tests-YES-blue)]()
 [![Dependency Manager](https://img.shields.io/badge/Dependency_Manager-SPM-red)](#swiftpackagemanager)
@@ -38,9 +38,9 @@ let package = Package(
 
 Define two enums: 
 - one for the base API address called `ApiServer`
-- one that follows the `GREndpointManager` protocol, more information [here](https://goodrequest.github.io/GoodNetworking/documentation/goodnetworking/grendpointmanager/)
+- one that follows the `Endpoint` protocol, more information [here](https://goodrequest.github.io/GoodNetworking/documentation/goodnetworking/models/endpoint/)
 
-Create a RequestManager using `GRSession<RequestEndpoint, APIServer>`
+Create a RequestManager using `GRSession`
 
 ```swift
 import GoodNetworking

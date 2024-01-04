@@ -1,6 +1,6 @@
 //
-//  GRSessionConfiguration.swift
-//
+//  NetworkSessionConfiguration.swift
+//  GoodNetworking
 //
 //  Created by Andrej Jasso on 15/11/2022.
 //

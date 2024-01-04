@@ -13,7 +13,7 @@ public class NetworkSession {
 
     // MARK: - Static
 
-    public static let `default` = NetworkSession()
+    public static var `default` = NetworkSession()
 
     // MARK: - Private
 

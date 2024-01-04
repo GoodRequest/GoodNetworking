@@ -1,6 +1,6 @@
 //
 //  Observable.swift
-//  requestWrapper
+//  GoodNetworking
 //
 //  Created by Filip Šašala on 10/12/2023.
 //

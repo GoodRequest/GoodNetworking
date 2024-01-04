@@ -1,6 +1,6 @@
 //
 //  Fetch.swift
-//  requestWrapper
+//  GoodNetworking
 //
 //  Created by Filip Šašala on 08/12/2023.
 //
@@ -29,7 +29,7 @@ import SwiftUI
     @ObservedObject @Observable private var observableQuery: Q
     @ObservedObject @Observable private var dataTask: AnyCancellable?
 
-    private var session: NetworkSession
+    private let session: NetworkSession
 
     public var wrappedValue: Q {
         get { observableQuery }
@@ -51,23 +51,11 @@ import SwiftUI
         self._observableQuery = ObservedObject(wrappedValue: Observable(wrappedValue))
         self._dataTask = ObservedObject(wrappedValue: Observable(nil))
 
-        self.dataTask = makeDataTask(from: observableQuery)
+        self.dataTask = makeDataTask(from: wrappedValue)
     }
 
     private func makeDataTask(from query: Q) -> AnyCancellable {
-        let endpoint = Q.endpoint(query)
-
-        return session.request(endpoint: endpoint)
-            .goodify(type: Q.Result.self)
-            .receive(on: DispatchQueue.main)
-            .map { .success($0) }
-            .catch { Just(.failure($0)) }
-        #if canImport(GoodStructs)
-            .prepend(.loading)
-        #endif
-        #if DEBUG
-            .throttle(for: 1, scheduler: RunLoop.main, latest: true)
-        #endif
+        query.dataTaskPublisher(using: session)
             .sink { [self] in observableQuery.result = $0 }
     }
 

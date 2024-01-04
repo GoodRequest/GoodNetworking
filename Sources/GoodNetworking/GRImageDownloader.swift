@@ -1,6 +1,6 @@
 //
 //  GRImageDownloader.swift
-//
+//  GoodNetworking
 //
 //  Created by Andrej Jasso on 24/05/2022.
 //

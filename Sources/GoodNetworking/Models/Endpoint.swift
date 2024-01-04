@@ -1,5 +1,8 @@
 //
-//  GREndpoint.swift
+//  Endpoint.swift
+//  GoodNetworking
+//
+//  Created by Filip Šašala on 10/12/2023.
 //
 
 import Alamofire
@@ -69,6 +72,14 @@ public enum EndpointParameters {
             }
         }
     }
+
+}
+
+// MARK: - EndpointBindable
+
+public protocol EndpointBindable {
+
+    static func endpoint(_ data: Self) -> Endpoint
 
 }
 
