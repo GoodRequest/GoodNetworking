@@ -1,12 +1,12 @@
 //
-//  GRSessionConfiguration.swift
-//
+//  NetworkSessionConfiguration.swift
+//  GoodNetworking
 //
 //  Created by Andrej Jasso on 15/11/2022.
 //
 
-import Foundation
 import Alamofire
+import Foundation
 
 /// The GRSessionConfiguration class represents the configuration used to create a GRSession object. This class has the following properties:
 public final class NetworkSessionConfiguration {

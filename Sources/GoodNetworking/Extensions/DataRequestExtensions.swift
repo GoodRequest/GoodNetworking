@@ -1,6 +1,6 @@
 //
 //  DataRequestExtensions.swift
-//
+//  GoodNetworking
 //
 //  Created by Dominik Pethö on 4/30/19.
 //

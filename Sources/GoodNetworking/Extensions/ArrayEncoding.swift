@@ -1,6 +1,6 @@
 //
 //  ArrayEncoding.swift
-//
+//  GoodNetworking
 //
 //  Created by Andrej Jasso on 18/10/2023.
 //

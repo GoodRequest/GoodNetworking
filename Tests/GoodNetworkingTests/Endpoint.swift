@@ -3,8 +3,8 @@ import GoodNetworking
 import Alamofire
 import Combine
 
-enum Endpoint: GREndpointManager {
-    
+enum TestEndpoint: Endpoint {
+
     case unkeyedTopLevelList(MyStruct)
 
     var path: String {
@@ -43,8 +43,8 @@ enum Endpoint: GREndpointManager {
         }
     }
 
-    func asURL(baseURL: String) throws -> URL {
-        var url = try baseURL.asURL()
+    func url(on baseUrl: String) throws -> URL {
+        var url = try baseUrl.asURL()
         url.appendPathComponent(path)
         return url
     }

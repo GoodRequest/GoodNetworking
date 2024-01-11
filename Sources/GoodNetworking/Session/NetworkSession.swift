@@ -1,19 +1,19 @@
 //
-//  GRSession.swift
-//
+//  NetworkSession.swift
+//  GoodNetworking
 //
 //  Created by Dominik Pethö on 8/17/20.
 //
 
-import Foundation
 import Alamofire
+import Foundation
 
 /// Executes network requests for the client app.
 public class NetworkSession {
 
     // MARK: - Static
 
-    public static let `default` = NetworkSession()
+    public static var `default` = NetworkSession()
 
     // MARK: - Private
 

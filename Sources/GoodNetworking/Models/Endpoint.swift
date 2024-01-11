@@ -1,5 +1,8 @@
 //
-//  GREndpoint.swift
+//  Endpoint.swift
+//  GoodNetworking
+//
+//  Created by Filip Šašala on 10/12/2023.
 //
 
 import Alamofire
@@ -40,7 +43,7 @@ public protocol Endpoint {
 /// Enum that represents the type of parameters to be sent with the request.
 public enum EndpointParameters {
 
-    typealias CustomEncodable = (Encodable & WithCustomEncoder)
+    public typealias CustomEncodable = (Encodable & WithCustomEncoder)
 
     /// Case for sending `Parameters`.
     case parameters(Parameters)
@@ -48,7 +51,7 @@ public enum EndpointParameters {
     /// Case for sending an instance of `Encodable`.
     case model(Encodable)
 
-    var dictionary: Parameters? {
+    public var dictionary: Parameters? {
         switch self {
         case .parameters(let parameters):
             return parameters
@@ -69,6 +72,14 @@ public enum EndpointParameters {
             }
         }
     }
+
+}
+
+// MARK: - EndpointBindable
+
+public protocol EndpointBindable {
+
+    static func endpoint(_ data: Self) -> Endpoint
 
 }
 
