@@ -134,28 +134,3 @@ public extension NetworkSession {
     }
 
 }
-
-// MARK: - Compatibility
-
-@available(*, deprecated, renamed: "NetworkSession", message: "Renamed to non-generic type NetworkSession.")
-public typealias GRSession = NetworkSession
-
-public extension NetworkSession {
-
-    @available(*, deprecated, renamed: "init(baseUrl:configuration:)", message: "Fixed capitalization of baseUrl.")
-    convenience init<BaseURL: RawRepresentable>(
-        baseURL: BaseURL, 
-        configuration: NetworkSessionConfiguration
-    ) where BaseURL.RawValue == String {
-        self.init(baseUrl: baseURL.rawValue, configuration: configuration)
-    }
-
-    @available(*, deprecated, message: "Use non-generic version instead.")
-    convenience init<BaseURL: RawRepresentable>(
-        baseUrl: BaseURL,
-        configuration: NetworkSessionConfiguration
-    ) where BaseURL.RawValue == String {
-        self.init(baseUrl: baseUrl.rawValue, configuration: configuration)
-    }
-
-}

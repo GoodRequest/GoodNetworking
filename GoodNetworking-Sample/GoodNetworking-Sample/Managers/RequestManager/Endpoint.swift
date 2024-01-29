@@ -9,7 +9,7 @@ import Foundation
 import GoodNetworking
 import Alamofire
 
-enum Endpoint: GREndpointManager {
+enum Endpoint: GoodNetworking.Endpoint {
 
 case hero(id: Int)
 
@@ -22,13 +22,17 @@ case hero(id: Int)
 
     var method: HTTPMethod { .get }
 
-    var parameters: EndpointParameters? { nil }
+    var parameters: EndpointParameters? {
+        return nil
+    }
 
-    var headers: HTTPHeaders? {nil}
+    var headers: HTTPHeaders? {
+        .default
+    }
 
     var encoding: ParameterEncoding { JSONEncoding.default }
 
-    func asURL(baseURL: String) throws -> URL {
+    func url(on baseURL: String) throws -> URL {
         var url = try baseURL.asURL()
         url.appendPathComponent(path)
         return url

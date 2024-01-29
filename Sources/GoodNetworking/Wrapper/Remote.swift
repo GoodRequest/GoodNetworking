@@ -105,8 +105,10 @@ extension Remote {
         query.dataTaskPublisher(using: session)
             .sink { [self] result in
                 switch result {
+                #if canImport(GoodStructs)
                 case .loading:
                     self.resourceState = .loading
+                #endif
 
                 case .success(let result):
                     if let queryResult = mapping(result) {
