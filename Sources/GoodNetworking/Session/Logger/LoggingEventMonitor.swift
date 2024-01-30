@@ -8,7 +8,7 @@
 import Foundation
 import Alamofire
 
-open class LoggingEventMonitor: EventMonitor {
+public class LoggingEventMonitor: EventMonitor {
 
     public let queue = DispatchQueue(label: C.queueLabel, qos: .background)
 
