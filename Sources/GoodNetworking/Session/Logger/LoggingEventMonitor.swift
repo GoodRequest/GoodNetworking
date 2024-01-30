@@ -21,7 +21,7 @@ public class LoggingEventMonitor: EventMonitor {
     private var verbose: Bool
     private var logger: any SessionLogger
 
-    init(logger: any SessionLogger, verbose: Bool = true) {
+    public init(logger: any SessionLogger, verbose: Bool = true) {
         self.logger = logger
         self.verbose = verbose
     }
