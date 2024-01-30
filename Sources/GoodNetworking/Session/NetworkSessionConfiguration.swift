@@ -11,22 +11,6 @@ import Foundation
 /// The GRSessionConfiguration class represents the configuration used to create a GRSession object. This class has the following properties:
 public final class NetworkSessionConfiguration {
 
-    // MARK: - Enums
-
-    /// The log level of the session, determines what kind of information will be logged by the `GRSessionLogger` class.
-    ///
-    /// error - prints only when error occurs
-    /// info - prints request url with response status and error when occurs
-    /// verbose - prints everything including request body and response object
-    public enum LogLevel {
-
-        case error
-        case info
-        case verbose
-        case none
-
-    }
-
     // MARK: - Constants
 
     /// The `URLSessionConfiguration` used to configure the `Session` object.
@@ -64,27 +48,22 @@ public final class NetworkSessionConfiguration {
 
     // MARK: - Static
 
-    /// The log level of the session, determines what kind of information will be logged by the `GRSessionLogger` class.
-    public static var logLevel: LogLevel = .verbose
-
     /// The default configuration for a `GRSession` object.
-    public static let `default` = NetworkSessionConfiguration(
-        urlSessionConfiguration: .default,
-        interceptor: nil,
-        serverTrustManager: nil,
-        eventMonitors: [GRSessionLogger()]
-    )
+    public static var `default`: NetworkSessionConfiguration {
+        var eventMonitors: [EventMonitor] = []
 
-}
+        if #available(iOS 14, *) {
+            eventMonitors.append(LoggingEventMonitor(logger: OSLogSessionLogger()))
+        } else {
+            eventMonitors.append(LoggingEventMonitor(logger: PrintLogger()))
+        }
 
-// MARK: - Compatibility
-
-@available(*, deprecated, renamed: "NetworkSessionConfiguration", message: "Renamed to NetworkSessionConfiguration.")
-public typealias GRSessionConfiguration = NetworkSessionConfiguration
-
-extension NetworkSessionConfiguration {
-
-    @available(*, deprecated, renamed: "LogLevel", message: "Renamed to LogLevel.")
-    public typealias GRSessionLogLevel = LogLevel
+        return NetworkSessionConfiguration(
+            urlSessionConfiguration: .default,
+            interceptor: nil,
+            serverTrustManager: nil,
+            eventMonitors: eventMonitors
+        )
+    }
 
 }

@@ -17,14 +17,14 @@ enum ApiServer: String {
 
 final class RequestManager: RequestManagerType {
 
-    private let session: GRSession<Endpoint, ApiServer>
+    private let session: NetworkSession
 
     init(baseServer: ApiServer) {
-        session = GRSession(baseURL: baseServer, configuration: .default)
+        session = NetworkSession(baseUrl: baseServer.rawValue, configuration: .default)
     }
 
     func fetchHero(heroId: Int) -> RequestPublisher<HeroResponse> {
-        return session.request(endpoint: .hero(id: heroId))
+        return session.request(endpoint: Endpoint.hero(id: heroId))
             .goodify()
             .eraseToAnyPublisher()
     }
