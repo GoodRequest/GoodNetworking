@@ -13,6 +13,8 @@ public final class OSLogLogger: SessionLogger {
 
     private let logger = Logger(subsystem: "OSLogSessionLogger", category: "Networking")
 
+    public init() {}
+
     public func log(level: OSLogType, message: String) {
         logger.log(level: level, "\(message)")
     }

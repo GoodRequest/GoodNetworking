@@ -10,6 +10,8 @@ import OSLog
 
 public final class PrintLogger: SessionLogger {
 
+    public init() {}
+
     public func log(level: OSLogType, message: String) {
         print(message)
     }
