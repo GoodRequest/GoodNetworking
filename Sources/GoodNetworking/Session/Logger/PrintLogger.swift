@@ -8,9 +8,9 @@
 import Foundation
 import OSLog
 
-final class PrintLogger: SessionLogger {
+public final class PrintLogger: SessionLogger {
 
-    func log(level: OSLogType, message: String) {
+    public func log(level: OSLogType, message: String) {
         print(message)
     }
 

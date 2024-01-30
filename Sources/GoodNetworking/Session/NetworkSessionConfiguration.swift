@@ -53,7 +53,7 @@ public final class NetworkSessionConfiguration {
         var eventMonitors: [EventMonitor] = []
 
         if #available(iOS 14, *) {
-            eventMonitors.append(LoggingEventMonitor(logger: OSLogSessionLogger()))
+            eventMonitors.append(LoggingEventMonitor(logger: OSLogLogger()))
         } else {
             eventMonitors.append(LoggingEventMonitor(logger: PrintLogger()))
         }
