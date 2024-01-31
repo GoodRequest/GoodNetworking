@@ -10,6 +10,10 @@ import Alamofire
 
 public class LoggingEventMonitor: EventMonitor {
 
+    public static var verbose: Bool = true
+    public static var prettyPrinted: Bool = true
+    public static var maxVerboseLogSizeBytes: Int = 100_000
+
     public let queue = DispatchQueue(label: C.queueLabel, qos: .background)
 
     private enum C {
@@ -18,12 +22,10 @@ public class LoggingEventMonitor: EventMonitor {
 
     }
 
-    private var verbose: Bool
     private var logger: any SessionLogger
 
-    public init(logger: any SessionLogger, verbose: Bool = true) {
+    public init(logger: any SessionLogger) {
         self.logger = logger
-        self.verbose = verbose
     }
 
     public func request<T>(_ request: DataRequest, didParseResponse response: DataResponse<T, AFError>) {
@@ -59,7 +61,7 @@ private extension LoggingEventMonitor {
               let method = request.httpMethod else {
             return nil
         }
-        guard verbose else {
+        guard Self.verbose else {
             return "🚀 \(method) \(url)"
         }
 
@@ -81,15 +83,15 @@ private extension LoggingEventMonitor {
     }
 
     func parse(data: Data?, error: NSError?, prefix: String) -> String? {
-        guard verbose else { return nil }
+        guard Self.verbose else { return nil }
 
         if let data = data, !data.isEmpty {
-            guard data.count < 100_000 else {
+            guard data.count < Self.maxVerboseLogSizeBytes else {
                 return ""
             }
             if let string = String(data: data, encoding: .utf8) {
                 if let jsonData = try? JSONSerialization.jsonObject(with: data, options: []),
-                   let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonData, options: [.prettyPrinted, .withoutEscapingSlashes]),
+                   let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonData, options: Self.prettyPrinted ? [.prettyPrinted, .withoutEscapingSlashes] : [.withoutEscapingSlashes]),
                    let prettyPrintedString = String(data: prettyPrintedData, encoding: .utf8) {
                     return "\(prefix) \n\(prettyPrintedString)"
                 } else {
@@ -102,7 +104,7 @@ private extension LoggingEventMonitor {
     }
 
     func parse(metrics: URLSessionTaskMetrics?) -> String? {
-        guard let metrics, verbose else {
+        guard let metrics, Self.verbose else {
             return nil
         }
         return "↗️ Start: \(metrics.taskInterval.start)" + "\n" + "⌛️ Duration: \(metrics.taskInterval.duration)s"
