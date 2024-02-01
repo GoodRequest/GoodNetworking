@@ -33,6 +33,11 @@ public class LoggingEventMonitor: EventMonitor {
         let metricsMessage = parse(metrics: response.metrics)
         let requestBodyMessage = parse(data: request.request?.httpBody, error: response.error as NSError?, prefix: "⬆️ Request body:")
         let responseStatusMessage = parseResponseStatus(response: response.response)
+        let errorMessage: String? = if let afError = response.error {
+            "🚨 Error:\n\(afError)"
+        } else {
+            nil
+        }
         let responseBodyMessage = parse(data: response.data, error: response.error as NSError?, prefix: "⬇️ Response body:")
 
         let logMessaage = [
@@ -40,6 +45,7 @@ public class LoggingEventMonitor: EventMonitor {
             metricsMessage,
             requestBodyMessage,
             responseStatusMessage,
+            errorMessage,
             responseBodyMessage
         ].compactMap { $0 }.joined(separator: "\n")
 
