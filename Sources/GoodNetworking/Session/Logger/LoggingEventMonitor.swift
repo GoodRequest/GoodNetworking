@@ -93,7 +93,13 @@ private extension LoggingEventMonitor {
 
         if let data = data, !data.isEmpty {
             guard data.count < Self.maxVerboseLogSizeBytes else {
-                return ""
+                return [
+                    prefix,
+                    "Data size is too big!",
+                    "Max size is: \(Self.maxVerboseLogSizeBytes) bytes.",
+                    "Data size is: \(data.count) bytes",
+                    "💡Tip: Change LoggingEventMonitor.maxVerboseLogSizeBytes = \(data.count)"
+                ].joined(separator: "\n")
             }
             if let string = String(data: data, encoding: .utf8) {
                 if let jsonData = try? JSONSerialization.jsonObject(with: data, options: []),
