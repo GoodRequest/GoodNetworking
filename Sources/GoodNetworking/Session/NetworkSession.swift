@@ -133,4 +133,38 @@ public extension NetworkSession {
         )
     }
 
+    /// Uploads multipart form data to endpoint.
+    ///
+    /// - Parameters:
+    ///  - endpoint: The endpoint manager object to specify the endpoint URL and other related information.
+    ///  - multipartFormData: The multipart form data to be uploaded.
+    ///  - base: The base URL to use for the request. Defaults to nil.
+    /// - Returns: The upload request object.
+    /// ## Example
+    /// ```swift
+    /// let fileURL = URL(filePath: "path/to/file")
+    /// let multipartFormData = MultipartFormData()
+    /// multipartFormData.append(fileURL, withName: "file")
+    ///
+    /// let image = UIImage(named: "image")
+    /// let imageData = image?.jpegData(compressionQuality: 0.5)
+    /// multipartFormData.append(imageData!, withName: "image", fileName: "image.jpg", mimeType: "image/jpeg")
+    ///
+    /// let request = session.uploadWithMultipart(endpoint: endpoint, multipartFormData: multipartFormData)
+    /// ```
+    func uploadWithMultipart(
+        endpoint: Endpoint,
+        multipartFormData: MultipartFormData,
+        base: String? = nil
+    ) -> UploadRequest {
+        let baseUrl = base ?? baseUrl ?? ""
+
+        return session.upload(
+            multipartFormData: multipartFormData,
+            to: try? endpoint.url(on: baseUrl),
+            method: endpoint.method,
+            headers: endpoint.headers
+        )
+    }
+
 }
