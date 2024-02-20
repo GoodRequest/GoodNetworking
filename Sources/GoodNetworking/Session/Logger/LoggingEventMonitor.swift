@@ -38,7 +38,12 @@ public class LoggingEventMonitor: EventMonitor {
         } else {
             nil
         }
-        let responseBodyMessage = parse(data: response.data, error: response.error as NSError?, prefix: "⬇️ Response body:")
+        
+        let responseBodyMessage = if Self.useMimeTypeWhitelist, Self.responseTypeWhiteList.contains(where: { $0 == response.response?.mimeType }) {
+            parse(data: response.data, error: response.error as NSError?, prefix: "⬇️ Response body:")
+        } else {
+            "❓❓❓ Response MIME type not whitelisted (\(response.response?.mimeType ?? "❓")). You can try adding it to whitelist using logMimeType(_ mimeType:)."
+        }
 
         let logMessaage = [
             requestInfoMessage,
@@ -132,4 +137,31 @@ private extension LoggingEventMonitor {
         return logMessage
     }
 
+}
+
+public extension LoggingEventMonitor {
+    
+    private(set) static var responseTypeWhiteList: [String] = [
+        "application/json",
+        "application/ld+json",
+        "application/xml",
+        "text/plain",
+        "text/csv",
+        "text/html",
+        "text/javascript",
+        "application/rtf"
+    ]
+    
+    static var useMimeTypeWhitelist: Bool = true
+    
+    static func logMimeType(_ mimeType: String) {
+        responseTypeWhiteList.append(mimeType)
+    }
+    
+    static func stopLoggingMimeType(_ mimeType: String) {
+        responseTypeWhiteList.removeAll(where: {
+            $0 == mimeType
+        })
+    }
+    
 }
