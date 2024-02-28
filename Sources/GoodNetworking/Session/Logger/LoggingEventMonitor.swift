@@ -7,12 +7,15 @@
 
 import Foundation
 import Alamofire
+import Combine
 
 public class LoggingEventMonitor: EventMonitor {
 
     public static var verbose: Bool = true
     public static var prettyPrinted: Bool = true
     public static var maxVerboseLogSizeBytes: Int = 100_000
+
+    private var messages: PassthroughSubject<String, Never>?
 
     public let queue = DispatchQueue(label: C.queueLabel, qos: .background)
 
@@ -26,6 +29,12 @@ public class LoggingEventMonitor: EventMonitor {
 
     public init(logger: any SessionLogger) {
         self.logger = logger
+    }
+
+    public func subscribeToMessages() -> AnyPublisher<String, Never> {
+        let messages = PassthroughSubject<String, Never>()
+        self.messages = messages
+        return messages.eraseToAnyPublisher()
     }
 
     public func request<T>(_ request: DataRequest, didParseResponse response: DataResponse<T, AFError>) {
@@ -53,6 +62,10 @@ public class LoggingEventMonitor: EventMonitor {
             errorMessage,
             responseBodyMessage
         ].compactMap { $0 }.joined(separator: "\n")
+
+        if let messages {
+            messages.send(logMessaage)
+        }
 
         switch response.result {
         case .success:
