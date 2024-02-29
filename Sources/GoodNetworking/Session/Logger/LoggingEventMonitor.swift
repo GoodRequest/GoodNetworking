@@ -29,10 +29,9 @@ public class LoggingEventMonitor: EventMonitor {
     }
 
     public func request<T>(_ request: DataRequest, didParseResponse response: DataResponse<T, AFError>) {
-        let requestInfoMessage = parseRequestInfo(request: response.request)
+        let requestInfoMessage = parseRequestInfo(response: response)
         let metricsMessage = parse(metrics: response.metrics)
         let requestBodyMessage = parse(data: request.request?.httpBody, error: response.error as NSError?, prefix: "⬆️ Request body:")
-        let responseStatusMessage = parseResponseStatus(response: response.response)
         let errorMessage: String? = if let afError = response.error {
             "🚨 Error:\n\(afError)"
         } else {
@@ -49,7 +48,6 @@ public class LoggingEventMonitor: EventMonitor {
             requestInfoMessage,
             metricsMessage,
             requestBodyMessage,
-            responseStatusMessage,
             errorMessage,
             responseBodyMessage
         ].compactMap { $0 }.joined(separator: "\n")
@@ -66,14 +64,16 @@ public class LoggingEventMonitor: EventMonitor {
 
 private extension LoggingEventMonitor {
 
-    func parseRequestInfo(request: URLRequest?) -> String? {
-        guard let request = request,
+    func parseRequestInfo<T>(response: DataResponse<T, AFError>) -> String? {
+        guard let request = response.request,
               let url = request.url?.absoluteString.removingPercentEncoding,
-              let method = request.httpMethod else {
+              let method = request.httpMethod,
+              let response = response.response
+        else {
             return nil
         }
         guard Self.verbose else {
-            return "🚀 \(method) \(url)"
+            return "🚀 \(method)|\(parseResponseStatus(response: response))|\(url)"
         }
 
         if let headers = request.allHTTPHeaderFields,
@@ -81,7 +81,7 @@ private extension LoggingEventMonitor {
            let headersData = try? JSONSerialization.data(withJSONObject: headers, options: [.prettyPrinted]),
            let headersPrettyMessage = parse(data: headersData, error: nil, prefix: "🏷 Headers:") {
 
-            return "🚀 \(method) \(url)\n" + headersPrettyMessage
+            return "🚀 \(method)|\(parseResponseStatus(response: response))|\(url)\n" + headersPrettyMessage
         } else {
             let headers = if let allHTTPHeaderFields = request.allHTTPHeaderFields, !allHTTPHeaderFields.isEmpty {
                 allHTTPHeaderFields.description
@@ -128,11 +128,8 @@ private extension LoggingEventMonitor {
     }
 
 
-    func parseResponseStatus(response: HTTPURLResponse?) -> String? {
-        guard let statusCode = response?.statusCode else {
-            return nil
-        }
-
+    func parseResponseStatus(response: HTTPURLResponse) -> String {
+        let statusCode = response.statusCode
         let logMessage = (200 ..< 300).contains(statusCode) ? "✅ \(statusCode)" : "❌ \(statusCode)"
         return logMessage
     }
