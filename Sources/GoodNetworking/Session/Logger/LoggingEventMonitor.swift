@@ -16,7 +16,6 @@ public class LoggingEventMonitor: EventMonitor {
     public static var maxVerboseLogSizeBytes: Int = 100_000
 
     private var messages: PassthroughSubject<String, Never>?
-    public lazy var messagesPublisher = messages?.eraseToAnyPublisher()
 
     public let queue = DispatchQueue(label: C.queueLabel, qos: .background)
 
@@ -30,6 +29,12 @@ public class LoggingEventMonitor: EventMonitor {
 
     public init(logger: (any SessionLogger)?) {
         self.logger = logger
+    }
+
+    public func subscribeToMessages() -> AnyPublisher<String, Never> {
+        let messages = PassthroughSubject<String, Never>()
+        self.messages = messages
+        return messages.eraseToAnyPublisher()
     }
 
     public func request<T>(_ request: DataRequest, didParseResponse response: DataResponse<T, AFError>) {
@@ -96,8 +101,7 @@ private extension LoggingEventMonitor {
             } else {
                 "empty headers"
             }
-
-            return "🚀 \(method) \(url)\n🏷 Headers: \(headers)"
+            return "🚀 \(method)|\(parseResponseStatus(response: response))|\(url)\n🏷 Headers: \(headers)"
         }
     }
 
