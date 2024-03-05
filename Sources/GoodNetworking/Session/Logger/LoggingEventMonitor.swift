@@ -7,12 +7,16 @@
 
 import Foundation
 import Alamofire
+import Combine
 
 public class LoggingEventMonitor: EventMonitor {
 
     public static var verbose: Bool = true
     public static var prettyPrinted: Bool = true
     public static var maxVerboseLogSizeBytes: Int = 100_000
+
+    private var messages: PassthroughSubject<String, Never>?
+    public lazy var messagesPublisher = messages?.eraseToAnyPublisher()
 
     public let queue = DispatchQueue(label: C.queueLabel, qos: .background)
 
@@ -22,9 +26,9 @@ public class LoggingEventMonitor: EventMonitor {
 
     }
 
-    private var logger: any SessionLogger
+    private var logger: (any SessionLogger)?
 
-    public init(logger: any SessionLogger) {
+    public init(logger: (any SessionLogger)?) {
         self.logger = logger
     }
 
@@ -44,7 +48,7 @@ public class LoggingEventMonitor: EventMonitor {
             "❓❓❓ Response MIME type not whitelisted (\(response.response?.mimeType ?? "❓")). You can try adding it to whitelist using logMimeType(_ mimeType:)."
         }
 
-        let logMessaage = [
+        let logMessage = [
             requestInfoMessage,
             metricsMessage,
             requestBodyMessage,
@@ -52,11 +56,15 @@ public class LoggingEventMonitor: EventMonitor {
             responseBodyMessage
         ].compactMap { $0 }.joined(separator: "\n")
 
+        if let messages {
+            messages.send(logMessage)
+        }
+
         switch response.result {
         case .success:
-            logger.log(level: .debug, message: logMessaage)
+            logger?.log(level: .debug, message: logMessage)
         case .failure:
-            logger.log(level: .fault, message: logMessaage)
+            logger?.log(level: .fault, message: logMessage)
         }
     }
 
