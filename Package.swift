@@ -33,12 +33,14 @@ let package = Package(
                 .product(name: "Alamofire", package: "Alamofire"),
                 .product(name: "AlamofireImage", package: "AlamofireImage")
             ],
-            path: "./Sources/GoodNetworking"
+            path: "./Sources/GoodNetworking",
+            resources: [.copy("PrivacyInfo.xcprivacy")]
         ),
         .target(
             name: "Mockable",
             dependencies: ["GoodNetworking"],
-            path: "./Sources/Mockable"
+            path: "./Sources/Mockable",
+            resources: [.copy("PrivacyInfo.xcprivacy")]
         ),
         .testTarget(
             name: "GoodNetworkingTests",
