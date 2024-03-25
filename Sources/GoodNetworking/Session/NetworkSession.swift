@@ -17,10 +17,10 @@ public class NetworkSession {
 
     // MARK: - Variables
 
-    let session: Alamofire.Session
-    let configuration: NetworkSessionConfiguration?
+    public let session: Alamofire.Session
+    public let configuration: NetworkSessionConfiguration?
 
-    let baseUrl: String?
+    public let baseUrl: String?
 
     // MARK: - Initialization
 
