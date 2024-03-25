@@ -15,12 +15,12 @@ public class NetworkSession {
 
     public static var `default` = NetworkSession()
 
-    // MARK: - Private
+    // MARK: - Variables
 
-    private let session: Alamofire.Session
-    private let configuration: NetworkSessionConfiguration?
+    let session: Alamofire.Session
+    let configuration: NetworkSessionConfiguration?
 
-    private let baseUrl: String?
+    let baseUrl: String?
 
     // MARK: - Initialization
 
