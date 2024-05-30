@@ -7,6 +7,7 @@
 
 import Alamofire
 import Foundation
+import GoodLogger
 
 /// The GRSessionConfiguration class represents the configuration used to create a GRSession object. This class has the following properties:
 public final class NetworkSessionConfiguration {
