@@ -8,6 +8,7 @@
 import Foundation
 import Alamofire
 import Combine
+import GoodLogger
 
 public class LoggingEventMonitor: EventMonitor {
 
@@ -25,9 +26,9 @@ public class LoggingEventMonitor: EventMonitor {
 
     }
 
-    private var logger: (any SessionLogger)?
+    private var logger: (any GoodLogger)?
 
-    public init(logger: (any SessionLogger)?) {
+    public init(logger: (any GoodLogger)?) {
         self.logger = logger
     }
 
@@ -67,9 +68,9 @@ public class LoggingEventMonitor: EventMonitor {
 
         switch response.result {
         case .success:
-            logger?.log(level: .debug, message: logMessage)
+            logger?.log(level: .debug, message: logMessage, privacy: .auto)
         case .failure:
-            logger?.log(level: .fault, message: logMessage)
+            logger?.log(level: .fault, message: logMessage, privacy: .auto)
         }
     }
 
