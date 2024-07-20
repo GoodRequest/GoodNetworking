@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 6.0
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -21,7 +21,7 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMajor(from: "5.9.0")),
+        .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMajor(from: "5.9.1")),
         .package(url: "https://github.com/Alamofire/AlamofireImage.git", .upToNextMajor(from: "4.2.0"))
     ],
     targets: [
@@ -30,17 +30,30 @@ let package = Package(
         .target(
             name: "GoodNetworking",
             dependencies: [
+                .target(name: "GoodNetworkingAlamofire")
+            ],
+            path: "./Sources/GoodNetworking",
+            resources: [.copy("PrivacyInfo.xcprivacy")],
+            swiftSettings: [
+                .swiftLanguageVersion(.v6),
+                .unsafeFlags(["-Onone"])
+            ]
+        ),
+        .target(
+            name: "GoodNetworkingAlamofire",
+            dependencies: [
                 .product(name: "Alamofire", package: "Alamofire"),
                 .product(name: "AlamofireImage", package: "AlamofireImage")
             ],
-            path: "./Sources/GoodNetworking",
-            resources: [.copy("PrivacyInfo.xcprivacy")]
+            path: "./Sources/GoodNetworkingAlamofire",
+            swiftSettings: [.swiftLanguageVersion(.v5)]
         ),
         .target(
             name: "Mockable",
             dependencies: ["GoodNetworking"],
             path: "./Sources/Mockable",
-            resources: [.copy("PrivacyInfo.xcprivacy")]
+            resources: [.copy("PrivacyInfo.xcprivacy")],
+            swiftSettings: [.swiftLanguageVersion(.v6)]
         ),
         .testTarget(
             name: "GoodNetworkingTests",
@@ -51,7 +64,8 @@ let package = Package(
                     .copy("Resources/ArrayNil.json"),
                     .copy("Resources/IsoDate.json"),
                     .copy("Resources/MilisecondsDate.json")
-                ]
+                ],
+            swiftSettings: [.swiftLanguageVersion(.v6)]
         ),
     ]
 )

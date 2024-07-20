@@ -43,7 +43,7 @@ public protocol Endpoint {
 /// Enum that represents the type of parameters to be sent with the request.
 public enum EndpointParameters {
 
-    public typealias CustomEncodable = (Encodable & WithCustomEncoder)
+    public typealias CustomEncodable = (Encodable & Sendable & WithCustomEncoder)
 
     /// Case for sending `Parameters`.
     case parameters(Parameters)
@@ -74,16 +74,3 @@ public enum EndpointParameters {
     }
 
 }
-
-// MARK: - EndpointBindable
-
-public protocol EndpointBindable {
-
-    static func endpoint(_ data: Self) -> Endpoint
-
-}
-
-// MARK: - Compatibility
-
-@available(*, deprecated, renamed: "Endpoint", message: "Renamed to Endpoint.")
-public typealias GREndpointManager = Endpoint

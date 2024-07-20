@@ -1,19 +1,20 @@
 //
-//  DataRequestExtensions.swift
+//  Goodify.swift
 //  GoodNetworking
 //
 //  Created by Dominik Pethö on 4/30/19.
 //
 
-import Foundation
-import Alamofire
+
+@preconcurrency import Alamofire
 import Combine
+import Foundation
 
 @available(iOS 13, *)
 public extension DataRequest {
 
-    /// Creates a `DataResponsePublisher` for this instance and uses a ``DecodableResponseSerializer`` to serialize the
-    /// response.
+    /// Creates a `DataTask` for this instance to await serialization of a `Decodable` value.
+    /// Uses a ``DecodableResponseSerializer`` to serialize the response.
     ///
     /// - Parameters:
     ///   - type:                `Decodable` type to which to decode response `Data`. Inferred from the context by default.
@@ -33,22 +34,21 @@ public extension DataRequest {
         queue: DispatchQueue = .main,
         preprocessor: DataPreprocessor = DecodableResponseSerializer<T>.defaultDataPreprocessor,
         emptyResponseCodes: Set<Int> = DecodableResponseSerializer<T>.defaultEmptyResponseCodes,
-        emptyResponseMethods: Set<HTTPMethod> = DecodableResponseSerializer<T>.defaultEmptyRequestMethods,
+        emptyRequestMethods: Set<HTTPMethod> = DecodableResponseSerializer<T>.defaultEmptyRequestMethods,
         decoder: JSONDecoder = (T.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
-    ) -> AnyPublisher<T, AFError> {
-        let serializer = DecodableResponseSerializer<T>(
+    ) -> DataTask<T> {
+        return self.validate().serializingDecodable(
+            T.self,
+            automaticallyCancelling: true,
             dataPreprocessor: preprocessor,
             decoder: decoder,
             emptyResponseCodes: emptyResponseCodes,
-            emptyRequestMethods: emptyResponseMethods
+            emptyRequestMethods: emptyRequestMethods
         )
-        return self.validate()
-            .publishResponse(using: serializer, on: queue)
-            .value()
     }
 
-    /// Creates a `DataResponsePublisher` for this instance and uses a `DecodableResponseSerializer` to serialize the
-    /// response.
+    /// Creates a `DataTask` for this instance to await serialization of a `Decodable` value.
+    /// Uses a ``DecodableResponseSerializer`` to serialize the response.
     ///
     /// - Parameters:
     ///   - type:                `Decodable` type to which to decode response `Data`. Inferred from the context by default.
@@ -63,22 +63,21 @@ public extension DataRequest {
     ///                          For `Decodable & WithCustomDecoder` custom `decoder` used by default.
     /// - Returns:               The `DataResponsePublisher`.
     func goodify<T: Decodable>(
-        type: T.Type = T.self,
+        type: [T].Type = [T].self,
         queue: DispatchQueue = .main,
         preprocessor: DataPreprocessor = DecodableResponseSerializer<T>.defaultDataPreprocessor,
         emptyResponseCodes: Set<Int> = DecodableResponseSerializer<T>.defaultEmptyResponseCodes,
-        emptyResponseMethods: Set<HTTPMethod> = DecodableResponseSerializer<T>.defaultEmptyRequestMethods,
+        emptyRequestMethods: Set<HTTPMethod> = DecodableResponseSerializer<T>.defaultEmptyRequestMethods,
         decoder: JSONDecoder = (T.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
-    ) -> AnyPublisher<[T], AFError> {
-        let serializer = DecodableResponseSerializer<[T]>(
+    ) -> DataTask<[T]> {
+        return self.validate().serializingDecodable(
+            [T].self,
+            automaticallyCancelling: true,
             dataPreprocessor: preprocessor,
             decoder: decoder,
             emptyResponseCodes: emptyResponseCodes,
-            emptyRequestMethods: emptyResponseMethods
+            emptyRequestMethods: emptyRequestMethods
         )
-        return self.validate()
-            .publishResponse(using: serializer, on: queue)
-            .value()
     }
 
 }

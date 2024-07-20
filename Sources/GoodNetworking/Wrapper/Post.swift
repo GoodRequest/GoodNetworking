@@ -5,7 +5,7 @@
 //  Created by Filip Šašala on 03/01/2024.
 //
 
-import Alamofire
+@preconcurrency import Alamofire
 import Combine
 import SwiftUI
 
@@ -45,103 +45,103 @@ import SwiftUI
 ///     Text(error.localizedDescription)
 /// }
 /// ```
-@propertyWrapper public struct Post<Q: Query>: DynamicProperty {
-
-    @ObservedObject @Observable private var observableQuery: Q?
-    @ObservedObject @Observable private var dataTask: AnyCancellable?
-
-    private let session: NetworkSession
-
-    public var wrappedValue: Q? {
-        get { observableQuery }
-        nonmutating set {
-            let oldValue = observableQuery
-            guard newValue != oldValue else { return }
-
-            observableQuery = newValue
-
-            dataTask?.cancel()
-            dataTask = nil
-
-            guard let newValue else { return }
-            dataTask = makeDataTask(from: newValue)
-        }
-    }
-
-    public init(wrappedValue: Q? = nil, session: NetworkSession = .default) {
-        self.session = session
-
-        self._observableQuery = ObservedObject(wrappedValue: Observable(wrappedValue))
-        self._dataTask = ObservedObject(wrappedValue: Observable(nil))
-
-        guard let wrappedValue else { return }
-        self.dataTask = makeDataTask(from: wrappedValue)
-    }
-
-    private func makeDataTask(from query: Q) -> AnyCancellable {
-        query.dataTaskPublisher(using: session)
-            .sink { [self] in observableQuery?.result = $0 }
-    }
-
-}
-
-@available(iOS 15.0, *)
-public extension Post where Q: Query {
-
-    @discardableResult
-    func response(_ value: Q) async throws -> Q.Result {
-        let resultPublisher = _observableQuery.wrappedValue.$wrappedValue.map { $0?.result }
-        self.wrappedValue = value
-
-        for await result in resultPublisher.values {
-            switch result {
-            case .none:
-                continue
-
-            #if canImport(GoodStructs)
-            case .loading:
-                continue
-            #endif
-
-            case .success(let result):
-                return result
-
-            case .failure(let error):
-                throw error
-            }
-        }
-
-        throw AFError.explicitlyCancelled
-    }
-
-}
-
-#if canImport(GoodStructs)
-import GoodStructs
-
-@available(iOS 15.0, *)
-public extension Post where Q: Query {
-
-    @discardableResult
-    func responseEither(_ value: Q) async -> Either<Q.Result, AFError> {
-        let resultPublisher = _observableQuery.wrappedValue.$wrappedValue.map { $0?.result }
-        self.wrappedValue = value
-
-        for await result in resultPublisher.values {
-            switch result {
-            case .none, .loading:
-                continue
-
-            case .success(let result):
-                return .left(result)
-
-            case .failure(let error):
-                return .right(error)
-            }
-        }
-
-        return .right(.explicitlyCancelled)
-    }
-
-}
-#endif
+//@propertyWrapper public struct Post<Q: Query>: DynamicProperty {
+//
+//    @ObservedObject @Observable private var observableQuery: Q?
+//    @ObservedObject @Observable private var dataTask: AnyCancellable?
+//
+//    private let session: NetworkSession
+//
+//    public var wrappedValue: Q? {
+//        get { observableQuery }
+//        nonmutating set {
+//            let oldValue = observableQuery
+//            guard newValue != oldValue else { return }
+//
+//            observableQuery = newValue
+//
+//            dataTask?.cancel()
+//            dataTask = nil
+//
+//            guard let newValue else { return }
+//            dataTask = makeDataTask(from: newValue)
+//        }
+//    }
+//
+//    public init(wrappedValue: Q? = nil, session: NetworkSession = .default) {
+//        self.session = session
+//
+//        self._observableQuery = ObservedObject(wrappedValue: Observable(wrappedValue))
+//        self._dataTask = ObservedObject(wrappedValue: Observable(nil))
+//
+//        guard let wrappedValue else { return }
+//        self.dataTask = makeDataTask(from: wrappedValue)
+//    }
+//
+//    private func makeDataTask(from query: Q) -> AnyCancellable {
+//        query.dataTaskPublisher(using: session)
+//            .sink { [self] in observableQuery?.result = $0 }
+//    }
+//
+//}
+//
+//@available(iOS 15.0, *)
+//public extension Post where Q: Query {
+//
+//    @discardableResult
+//    func response(_ value: Q) async throws -> Q.Result {
+//        let resultPublisher = _observableQuery.wrappedValue.$wrappedValue.map { $0?.result }
+//        self.wrappedValue = value
+//
+//        for await result in resultPublisher.values {
+//            switch result {
+//            case .none:
+//                continue
+//
+//            #if canImport(GoodStructs)
+//            case .loading:
+//                continue
+//            #endif
+//
+//            case .success(let result):
+//                return result
+//
+//            case .failure(let error):
+//                throw error
+//            }
+//        }
+//
+//        throw AFError.explicitlyCancelled
+//    }
+//
+//}
+//
+//#if canImport(GoodStructs)
+//import GoodStructs
+//
+//@available(iOS 15.0, *)
+//public extension Post where Q: Query {
+//
+//    @discardableResult
+//    func responseEither(_ value: Q) async -> Either<Q.Result, AFError> {
+//        let resultPublisher = _observableQuery.wrappedValue.$wrappedValue.map { $0?.result }
+//        self.wrappedValue = value
+//
+//        for await result in resultPublisher.values {
+//            switch result {
+//            case .none, .loading:
+//                continue
+//
+//            case .success(let result):
+//                return .left(result)
+//
+//            case .failure(let error):
+//                return .right(error)
+//            }
+//        }
+//
+//        return .right(.explicitlyCancelled)
+//    }
+//
+//}
+//#endif

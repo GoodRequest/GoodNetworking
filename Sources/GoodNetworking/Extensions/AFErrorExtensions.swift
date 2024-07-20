@@ -6,11 +6,20 @@
 //
 
 import Alamofire
+import Foundation
 
-extension AFError: Equatable {
+extension AFError: @retroactive Equatable {
 
     public static func == (lhs: AFError, rhs: AFError) -> Bool {
-        false // every AFError is unique
+        lhs.localizedDescription == rhs.localizedDescription
+    }
+
+}
+
+extension AFError: @retroactive Hashable {
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.localizedDescription)
     }
 
 }
