@@ -13,11 +13,11 @@ import GoodLogger
 
 public struct RawResponse: Sendable {
 
-    var create: (Decodable & Sendable)?
-    var read: (Decodable & Sendable)?
-    var update: (Decodable & Sendable)?
-    var delete: (Decodable & Sendable)?
-    var list: (Decodable & Sendable)?
+    var create: (NetworkSession.DataType)?
+    var read: (NetworkSession.DataType)?
+    var update: (NetworkSession.DataType)?
+    var delete: (NetworkSession.DataType)?
+    var list: (NetworkSession.DataType)?
 
 }
 

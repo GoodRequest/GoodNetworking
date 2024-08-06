@@ -34,9 +34,9 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     /// For iOS 14 and later, it uses `OSLogLogger`. For earlier versions, it defaults to `PrintLogger`.
     private var logger: GoodLogger {
         if #available(iOS 14, *) {
-            return OSLogLogger()
+            return OSLogLogger(logMetaData: false)
         } else {
-            return PrintLogger()
+            return PrintLogger(logMetaData: false)
         }
     }
 
