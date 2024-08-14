@@ -31,10 +31,10 @@
     {
       "identity" : "goodextensions-ios",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/goodrequest/goodextensions-ios",
+      "location" : "https://github.com/GoodRequest/GoodExtensions-iOS",
       "state" : {
         "branch" : "feature/swift6",
-        "revision" : "bc6441ff94675877836b5de9759658d35622a279"
+        "revision" : "8a38f0a3cc3931aa5050b76544973417c1b93c15"
       }
     },
     {

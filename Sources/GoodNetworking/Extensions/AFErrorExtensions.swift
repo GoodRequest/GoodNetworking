@@ -8,6 +8,8 @@
 import Alamofire
 import Foundation
 
+extension AFError: @unchecked Sendable {}
+
 extension AFError: @retroactive Equatable {
 
     public static func == (lhs: AFError, rhs: AFError) -> Bool {

@@ -20,11 +20,11 @@ public struct RawResponse: Sendable {
 
 }
 
-@propertyWrapper public struct Resource<R: Remote>: DynamicProperty, Sendable {
+@propertyWrapper public struct Resource<R: RemoteResource>: DynamicProperty, Sendable {
 
     private let session: NetworkSession
 
-    @State private var _remote: R
+    @State private var _remote: R.Type
     @State private var _state: ResourceState<R.Resource, NetworkError>
     @State private var _listState: ResourceState<[R.Resource], NetworkError>
     @State private var _rawResponse: RawResponse = RawResponse()
@@ -38,7 +38,7 @@ public struct RawResponse: Sendable {
         }
     }
 
-    private var remote: R {
+    private var remote: R.Type {
         @storageRestrictions(initializes: __remote)
         init { __remote = State(initialValue: newValue) }
         get { _remote }
@@ -75,7 +75,7 @@ public struct RawResponse: Sendable {
     public init(
         wrappedValue: R.Resource? = nil,
         session: NetworkSession,
-        remote: R
+        remote: R.Type
     ) {
         self.session = session
         self.remote = remote
@@ -89,16 +89,21 @@ public struct RawResponse: Sendable {
         }
     }
 
+    public func initialize(with value: R.Resource) {
+        self.state = .available(value)
+        self.listState = .available([value])
+    }
+
     private func updateResource(newValue: R.Resource?) {
         guard let newValue else {
-            Task { await delete() }
+            Task { try await delete() }
             return
         }
         state = .pending(newValue)
         if state.value == nil {
-            Task { await create() }
+            Task { try await create() }
         } else if newValue != state.value {
-            Task { await updateRemote() }
+            Task { try await updateRemote() }
         }
     }
 
@@ -116,27 +121,27 @@ extension Resource {
         }
     }
 
-    public func create() async {
+    public func create() async throws {
         logger.log(level: .error, message: "CREATE operation not defined for resource \(String(describing: R.self))")
     }
 
-    public func read(forceReload: Bool = false) async {
+    public func read(forceReload: Bool = false) async throws {
         logger.log(level: .error, message: "READ operation not defined for resource \(String(describing: R.self))")
     }
 
-    public func updateRemote() async {
+    public func updateRemote() async throws {
         logger.log(level: .error, message: "UPDATE operation not defined for resource \(String(describing: R.self))")
     }
 
-    public func delete() async {
+    public func delete() async throws {
         logger.log(level: .error, message: "DELETE operation not defined for resource \(String(describing: R.self))")
     }
 
-    public func firstPage(forceReload: Bool = false) async {
+    public func firstPage(forceReload: Bool = false) async throws {
         logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))")
     }
 
-    public func nextPage() async {
+    public func nextPage() async throws {
         logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))")
     }
 
@@ -144,14 +149,14 @@ extension Resource {
 
 // MARK: - Create
 
-extension Resource where R: RemoteCreate {
+extension Resource where R: Creatable {
 
-    public func create() async {
-        guard let request = try? R.request(from: state.value) else { return }
-        await create(request: request)
+    public func create() async throws {
+        guard let request = try R.request(from: state.value) else { return }
+        try await create(request: request)
     }
 
-    public func create(request: R.CreateRequest) async {
+    public func create(request: R.CreateRequest) async throws {
         let resource = state.value
         if let resource {
             self.state = .uploading(resource)
@@ -180,6 +185,8 @@ extension Resource where R: RemoteCreate {
                 self.state = .failure(error)
                 self.listState = .failure(error)
             }
+
+            throw error
         }
     }
 
@@ -187,19 +194,19 @@ extension Resource where R: RemoteCreate {
 
 // MARK: - Read
 
-extension Resource where R: RemoteRead {
+extension Resource where R: Readable {
 
-    public func read(forceReload: Bool = false) async {
+    public func read(forceReload: Bool = false) async throws {
         let resource = state.value
-        guard let request = try? R.request(from: resource) else {
+        guard let request = try R.request(from: resource) else {
             self.state = .idle
             return
         }
 
-        await read(request: request, forceReload: forceReload)
+        try await read(request: request, forceReload: forceReload)
     }
 
-    public func read(request: R.ReadRequest, forceReload: Bool = false) async {
+    public func read(request: R.ReadRequest, forceReload: Bool = false) async throws {
         guard !state.isAvailable || forceReload else { return }
 
         self.state = .loading
@@ -219,6 +226,8 @@ extension Resource where R: RemoteRead {
         } catch let error {
             self.state = .failure(error)
             self.listState = .failure(error)
+
+            throw error
         }
     }
 
@@ -226,14 +235,14 @@ extension Resource where R: RemoteRead {
 
 // MARK: - Update
 
-extension Resource where R: RemoteUpdate {
+extension Resource where R: Updatable {
 
-    public func updateRemote() async {
-        guard let request = try? R.request(from: state.value) else { return }
-        await updateRemote(request: request)
+    public func updateRemote() async throws {
+        guard let request = try R.request(from: state.value) else { return }
+        try await updateRemote(request: request)
     }
 
-    public func updateRemote(request: R.UpdateRequest) async {
+    public func updateRemote(request: R.UpdateRequest) async throws {
         let resource = state.value
         if let resource {
             self.state = .uploading(resource)
@@ -262,6 +271,8 @@ extension Resource where R: RemoteUpdate {
                 self.state = .failure(error)
                 self.listState = .failure(error)
             }
+
+            throw error
         }
     }
 
@@ -269,14 +280,14 @@ extension Resource where R: RemoteUpdate {
 
 // MARK: - Delete
 
-extension Resource where R: RemoteDelete {
+extension Resource where R: Deletable {
 
-    public func delete() async {
-        guard let request = try? R.request(from: state.value) else { return }
-        await delete(request: request)
+    public func delete() async throws {
+        guard let request = try R.request(from: state.value) else { return }
+        try await delete(request: request)
     }
 
-    public func delete(request: R.DeleteRequest) async {
+    public func delete(request: R.DeleteRequest) async throws {
         self.state = .loading
         self.listState = .loading
 
@@ -292,6 +303,8 @@ extension Resource where R: RemoteDelete {
         } catch let error {
             self.state = .failure(error)
             self.listState = .failure(error)
+
+            throw error
         }
     }
 
@@ -299,13 +312,13 @@ extension Resource where R: RemoteDelete {
 
 // MARK: - List
 
-extension Resource: Sequence where R: RemoteList {
+extension Resource: Sequence where R: Listable {
 
     public typealias Element = R.Resource
 
 }
 
-extension Resource: Collection where R: RemoteList {
+extension Resource: Collection where R: Listable {
 
     internal var listElements: [R.Resource] {
         if let list = listState.value {
@@ -326,9 +339,9 @@ extension Resource: Collection where R: RemoteList {
     }
 
 }
-extension Resource: BidirectionalCollection where R: RemoteList {}
+extension Resource: BidirectionalCollection where R: Listable {}
 
-extension Resource: RandomAccessCollection where R: RemoteList {
+extension Resource: RandomAccessCollection where R: Listable {
 
     public var startIndex: Int {
         listElements.startIndex
@@ -338,19 +351,19 @@ extension Resource: RandomAccessCollection where R: RemoteList {
         listElements.endIndex
     }
 
-    public func firstPage(forceReload: Bool = false) async {
+    public func firstPage(forceReload: Bool = false) async throws {
         if !(listState.value?.isEmpty ?? true) || forceReload {
             self.listState = .idle
             self.state = .loading
         }
 
         let firstPageRequest = R.firstPageRequest()
-        await list(request: firstPageRequest)
+        try await list(request: firstPageRequest)
     }
 
-    public func nextPage() async {
+    public func nextPage() async throws {
         guard let nextPageRequest = nextPageRequest() else { return }
-        await list(request: nextPageRequest)
+        try await list(request: nextPageRequest)
     }
 
     internal func nextPageRequest() -> R.ListRequest? {
@@ -366,7 +379,7 @@ extension Resource: RandomAccessCollection where R: RemoteList {
         )
     }
 
-    public func list(request: R.ListRequest) async {
+    public func list(request: R.ListRequest) async throws {
         if !state.isAvailable {
             self.state = .loading
         }
@@ -390,13 +403,17 @@ extension Resource: RandomAccessCollection where R: RemoteList {
         } catch let error {
             self.state = .failure(error)
             self.listState = .failure(error)
+
+            throw error
         }
     }
 
 }
 
+// MARK: - Pager
+
 @available(iOS 14.0, *)
-public struct ResourcePager<R: RemoteList>: View {
+public struct ResourcePager<R: Listable>: View {
 
     @State private var isFinished = false
     private let resource: () -> Resource<R>
@@ -419,7 +436,11 @@ public struct ResourcePager<R: RemoteList>: View {
     private func getNextPage() async {
         if let nextPage = resource().nextPageRequest() {
             isFinished = false
-            await resource().list(request: nextPage)
+            do {
+                try await resource().list(request: nextPage)
+            } catch {
+                isFinished = true
+            }
         } else {
             isFinished = true
         }
