@@ -22,12 +22,12 @@ public struct RawResponse: Sendable {
 
 @propertyWrapper public struct Resource<R: RemoteResource>: DynamicProperty, Sendable {
 
-    private let session: NetworkSession
+    @State private var _session: FutureSession
+    @State private var _rawResponse: RawResponse = RawResponse()
 
     @State private var _remote: R.Type
     @State private var _state: ResourceState<R.Resource, NetworkError>
     @State private var _listState: ResourceState<[R.Resource], NetworkError>
-    @State private var _rawResponse: RawResponse = RawResponse()
 
     public var wrappedValue: R.Resource? {
         get {
@@ -59,7 +59,14 @@ public struct RawResponse: Sendable {
         nonmutating set { _listState = newValue }
     }
 
-    public var rawResponse: RawResponse {
+    private var session: FutureSession {
+        @storageRestrictions(initializes: __session)
+        init { __session = State(initialValue: newValue) }
+        get { _session }
+        nonmutating set { _session = newValue }
+    }
+
+    private var rawResponse: RawResponse {
         get { _rawResponse }
         nonmutating set { _rawResponse = newValue }
     }
@@ -77,7 +84,7 @@ public struct RawResponse: Sendable {
         session: NetworkSession,
         remote: R.Type
     ) {
-        self.session = session
+        self.session = FutureSession { session }
         self.remote = remote
 
         if let wrappedValue {
@@ -89,9 +96,39 @@ public struct RawResponse: Sendable {
         }
     }
 
-    public func initialize(with value: R.Resource) {
-        self.state = .available(value)
-        self.listState = .available([value])
+    public init(
+        session: FutureSession? = nil,
+        remote: R.Type
+    ) {
+        self.session = session ?? .placeholder
+        self.remote = remote
+        self.state = .idle
+        self.listState = .idle
+    }
+
+    @discardableResult
+    public func session(_ networkSession: NetworkSession) -> Self {
+        self.session = FutureSession { networkSession }
+        return self
+    }
+
+    @discardableResult
+    public func session(_ futureSession: FutureSession) -> Self {
+        self.session = futureSession
+        return self
+    }
+
+    @discardableResult
+    public func session(_ sessionSupplier: @escaping FutureSession.FutureSessionSupplier) -> Self {
+        self.session = FutureSession(sessionSupplier)
+        return self
+    }
+
+    @discardableResult
+    public func initialResource(_ newValue: R.Resource) -> Self {
+        self.state = .available(newValue)
+        self.listState = .available([newValue])
+        return self
     }
 
     private func updateResource(newValue: R.Resource?) {
@@ -152,7 +189,9 @@ extension Resource {
 extension Resource where R: Creatable {
 
     public func create() async throws {
-        guard let request = try R.request(from: state.value) else { return }
+        guard let request = try R.request(from: state.value) else {
+            return logger.log(level: .error, message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.")
+        }
         try await create(request: request)
     }
 
@@ -168,7 +207,7 @@ extension Resource where R: Creatable {
 
         do {
             let response = try await remote.create(
-                using: session,
+                using: session(),
                 request: request
             )
             self.rawResponse.create = response
@@ -196,25 +235,29 @@ extension Resource where R: Creatable {
 
 extension Resource where R: Readable {
 
-    public func read(forceReload: Bool = false) async throws {
+    // forceReload is default true, when resource is already set, calling read() is expected to always reload the data
+    public func read(forceReload: Bool = true) async throws {
         let resource = state.value
         guard let request = try R.request(from: resource) else {
             self.state = .idle
-            return
+            return logger.log(level: .error, message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.")
         }
 
         try await read(request: request, forceReload: forceReload)
     }
 
     public func read(request: R.ReadRequest, forceReload: Bool = false) async throws {
-        guard !state.isAvailable || forceReload else { return }
+        guard !state.isAvailable || forceReload else {
+            return logger.log(level: .info, message: "Skipping read - value already exists")
+        }
 
+        let resource = state.value
         self.state = .loading
         self.listState = .loading
 
         do {
             let response = try await remote.read(
-                using: session,
+                using: session(),
                 request: request
             )
             self.rawResponse.read = response
@@ -224,8 +267,13 @@ extension Resource where R: Readable {
             self.state = .available(resource)
             self.listState = .available([resource])
         } catch let error {
-            self.state = .failure(error)
-            self.listState = .failure(error)
+            if let resource {
+                self.state = .stale(resource, error)
+                self.listState = .stale([resource], error)
+            } else {
+                self.state = .failure(error)
+                self.listState = .failure(error)
+            }
 
             throw error
         }
@@ -238,7 +286,9 @@ extension Resource where R: Readable {
 extension Resource where R: Updatable {
 
     public func updateRemote() async throws {
-        guard let request = try R.request(from: state.value) else { return }
+        guard let request = try R.request(from: state.value) else {
+            return logger.log(level: .error, message: "Updating resource to nil always fails! Use DELETE instead.")
+        }
         try await updateRemote(request: request)
     }
 
@@ -254,7 +304,7 @@ extension Resource where R: Updatable {
 
         do {
             let response = try await remote.update(
-                using: session,
+                using: session(),
                 request: request
             )
             self.rawResponse.update = response
@@ -283,7 +333,9 @@ extension Resource where R: Updatable {
 extension Resource where R: Deletable {
 
     public func delete() async throws {
-        guard let request = try R.request(from: state.value) else { return }
+        guard let request = try R.request(from: state.value) else {
+            return logger.log(level: .error, message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.")
+        }
         try await delete(request: request)
     }
 
@@ -293,7 +345,7 @@ extension Resource where R: Deletable {
 
         do {
             let response = try await remote.delete(
-                using: session,
+                using: session(),
                 request: request
             )
             self.rawResponse.delete = response
@@ -386,7 +438,7 @@ extension Resource: RandomAccessCollection where R: Listable {
 
         do {
             let response = try await remote.list(
-                using: session,
+                using: session(),
                 request: request
             )
             self.rawResponse.list = response

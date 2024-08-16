@@ -8,6 +8,44 @@
 @preconcurrency import Alamofire
 import Foundation
 
+/// Network session that is resolved asynchronously when required and cached for subsequent usages
+public actor FutureSession {
+
+    public typealias FutureSessionSupplier = (@Sendable () async -> NetworkSession)
+
+    private var supplier: FutureSessionSupplier
+    private var sessionCache: NetworkSession?
+
+    public var cachedSession: NetworkSession {
+        get async {
+            let session = sessionCache
+            if let session {
+                return session
+            } else {
+                sessionCache = await supplier()
+                return sessionCache!
+            }
+        }
+    }
+
+    public init(_ supplier: @escaping FutureSessionSupplier) {
+        self.supplier = supplier
+    }
+
+    public func callAsFunction() async -> NetworkSession {
+        return await cachedSession
+    }
+
+}
+
+internal extension FutureSession {
+
+    static let placeholder: FutureSession = FutureSession {
+        preconditionFailure("No session supplied. Use Resource.session(:) and provide a valid network session.")
+    }
+
+}
+
 /// Executes network requests for the client app.
 public actor NetworkSession {
 
@@ -180,8 +218,8 @@ public enum NetworkError: Error, Hashable {
     case endpoint(EndpointError)
     case alamofire(AFError)
     case paging(PagingError)
-    case localMapError
-    case remoteMapError
+    case missingLocalData
+    case missingRemoteData
     case session
 
     var localizedDescription: String {
@@ -195,11 +233,11 @@ public enum NetworkError: Error, Hashable {
         case .paging(let pagingError):
             return pagingError.localizedDescription
 
-        case .localMapError:
-            return "Failed to map local resource to remote type"
+        case .missingLocalData:
+            return "Missing data - Failed to map local resource to remote type"
 
-        case .remoteMapError:
-            return "Failed to map remote resource to local type"
+        case .missingRemoteData:
+            return "Missing data - Failed to map remote resource to local type"
 
         case .session:
             return "Internal session error"

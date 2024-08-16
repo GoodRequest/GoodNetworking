@@ -38,7 +38,7 @@ public extension Creatable {
     }
 
     nonisolated static func request(from resource: Resource?) throws(NetworkError) -> CreateRequest? {
-        throw .localMapError
+        throw .missingLocalData
     }
 
 }
