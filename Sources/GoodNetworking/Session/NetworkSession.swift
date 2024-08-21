@@ -41,7 +41,7 @@ public actor FutureSession {
 internal extension FutureSession {
 
     static let placeholder: FutureSession = FutureSession {
-        preconditionFailure("No session supplied. Use Resource.session(:) and provide a valid network session.")
+        preconditionFailure("No session supplied. Use Resource.session(:) to provide a valid network session.")
     }
 
 }
@@ -104,6 +104,18 @@ public extension NetworkSession {
         } catch {
             throw .session
         }
+    }
+
+    func request(endpoint: Endpoint, base: String? = nil) -> DataRequest {
+        let baseUrl = base ?? baseUrl ?? ""
+
+        return session.request(
+            try? endpoint.url(on: baseUrl),
+            method: endpoint.method,
+            parameters: endpoint.parameters?.dictionary,
+            encoding: endpoint.encoding,
+            headers: endpoint.headers
+        )
     }
 
 }
