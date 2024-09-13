@@ -13,7 +13,7 @@ struct UserListScreen: View {
 
     // MARK: - Wrappers
 
-    @Resource(session: .sampleSession, remote: RemoteUser()) var users
+    @Resource(session: .sampleSession, remote: RemoteUser.self) var users
 
     // MARK: - View state
 
@@ -63,12 +63,20 @@ struct UserListScreen: View {
 extension UserListScreen {
 
     func reload() async {
-        await _users.firstPage(forceReload: true)
+        do {
+            try await _users.firstPage(forceReload: true)
+        } catch {
+            print("Error reloading users: \(error.localizedDescription)")
+        }
     }
 
     func loadList() async {
         guard !didLoadList else { return }
-        await _users.firstPage()
+        do {
+            try await _users.firstPage()
+        } catch {
+            print("Error loading users: \(error.localizedDescription)")
+        }
         didLoadList = true
     }
 

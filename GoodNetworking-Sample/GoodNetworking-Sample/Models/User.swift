@@ -83,7 +83,7 @@ extension User: Placeholdable {
 
 // MARK: - Remote
 
-struct RemoteUser: RemoteRead {
+struct RemoteUser: Readable {
 
     typealias Resource = User
     typealias ReadRequest = UserRequest
@@ -93,8 +93,8 @@ struct RemoteUser: RemoteRead {
         SampleEndpoint.singleUser(id: request.id)
     }
 
-    nonisolated static func request(from resource: Resource?) throws(NetworkError) -> ReadRequest {
-        guard let resource else { throw .localMapError }
+    nonisolated static func request(from resource: Resource?) throws(NetworkError) -> ReadRequest? {
+        guard let resource else { throw .missingLocalData }
         return UserRequest(id: resource.id)
     }
 
@@ -104,7 +104,7 @@ struct RemoteUser: RemoteRead {
 
 }
 
-extension RemoteUser: RemoteList {
+extension RemoteUser: Listable {
 
     typealias ListRequest = UserListRequest
     typealias ListResponse = UserListResponse

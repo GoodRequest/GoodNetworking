@@ -14,7 +14,7 @@ struct UserScreen: View {
 
     // MARK: - Wrappers
 
-    @Resource(session: .sampleSession, remote: RemoteUser()) var user
+    @Resource(session: .sampleSession, remote: RemoteUser.self) var user
 
     // MARK: - View state
 
@@ -35,8 +35,20 @@ struct UserScreen: View {
             }
             .padding()
         }
-        .refreshable { await _user.read(forceReload: true) }
-        .task { await _user.read(request: UserRequest(id: userId)) }
+        .refreshable {
+            do {
+                try await _user.read(forceReload: true)
+            } catch {
+                print(error)
+            }
+        }
+        .task {
+            do {
+                try await _user.read(request: UserRequest(id: userId))
+            } catch {
+                print(error)
+            }
+        }
         .navigationTitle("User detail")
         .navigationBarTitleDisplayMode(.inline)
     }
