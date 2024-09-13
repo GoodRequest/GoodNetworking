@@ -5,7 +5,7 @@
 //  Created by Filip Šašala on 02/01/2024.
 //
 
-import Alamofire
+@preconcurrency import Alamofire
 import Foundation
 
 extension Optional<Foundation.URL>: Alamofire.URLConvertible {

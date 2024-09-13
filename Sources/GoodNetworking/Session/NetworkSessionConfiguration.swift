@@ -5,11 +5,11 @@
 //  Created by Andrej Jasso on 15/11/2022.
 //
 
-import Alamofire
+@preconcurrency import Alamofire
 import Foundation
 
-/// The GRSessionConfiguration class represents the configuration used to create a GRSession object. This class has the following properties:
-public final class NetworkSessionConfiguration {
+/// NetworkSessionConfiguration represents the configuration used to create a NetworkSession object.
+public final class NetworkSessionConfiguration: Sendable {
 
     // MARK: - Constants
 
@@ -27,8 +27,8 @@ public final class NetworkSessionConfiguration {
 
     // MARK: - Initialization
 
-    /// Initializes a `GRSessionConfiguration` object with the provided parameters.
-    /// 
+    /// Initializes a `NetworkSessionConfiguration` object with the provided parameters.
+    ///
     /// - Parameters:
     ///   - urlSessionConfiguration: The `URLSessionConfiguration` used to configure the `Session` object.
     ///   - interceptor: The `RequestInterceptor` used to intercept requests and modify them.

@@ -5,26 +5,32 @@
 //  Created by GoodRequest on 09/02/2023.
 //
 
-import UIKit
 import Combine
+import GoodNetworking
+import SwiftUI
 
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-
-    var window: UIWindow?
+final class AppDelegate: NSObject, UIApplicationDelegate {
 
     func application(
         _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil
     ) -> Bool {
-        window = UIWindow()
-
-        UINavigationBar.setAppearance()
-
-        AppCoordinator(window: window, di: DI()).start()
-
+        NetworkSession.makeSampleSession()
         return true
     }
 
 }
 
+@main struct GoodNetworkingSample: App {
+
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    var body: some Scene {
+        WindowGroup {
+            NavigationView {
+                UserListScreen()
+            }
+        }
+    }
+
+}

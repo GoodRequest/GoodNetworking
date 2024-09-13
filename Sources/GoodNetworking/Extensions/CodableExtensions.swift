@@ -48,11 +48,11 @@ public extension Encodable where Self: WithCustomEncoder {
     }
     
     /// Returns the `Encodable` object as a JSON dictionary if encoding succeeds, otherwise it returns `nil`.
-    var jsonDictionary: [String: Any]? {
+    var jsonDictionary: [String: (Any & Sendable)]? {
         guard let data = try? encoder.encode(self) else { return nil }
 
         return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments))
-            .flatMap { $0 as? [String: Any] }
+            .flatMap { $0 as? [String: (Any & Sendable)] }
     }
     
 }

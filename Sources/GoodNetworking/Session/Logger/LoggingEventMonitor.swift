@@ -5,15 +5,16 @@
 //  Created by Matus Klasovity on 30/01/2024.
 //
 
-import Foundation
-import Alamofire
+@preconcurrency import Alamofire
 import Combine
+import Foundation
 
-public class LoggingEventMonitor: EventMonitor {
+#warning("fix this concurrency mess")
+@preconcurrency public class LoggingEventMonitor: EventMonitor, @unchecked Sendable {
 
-    public static var verbose: Bool = true
-    public static var prettyPrinted: Bool = true
-    public static var maxVerboseLogSizeBytes: Int = 100_000
+    nonisolated(unsafe) public static var verbose: Bool = true
+    nonisolated(unsafe) public static var prettyPrinted: Bool = true
+    nonisolated(unsafe) public static var maxVerboseLogSizeBytes: Int = 100_000
 
     private var messages: PassthroughSubject<String, Never>?
 
@@ -150,7 +151,7 @@ private extension LoggingEventMonitor {
 
 public extension LoggingEventMonitor {
     
-    private(set) static var responseTypeWhiteList: [String] = [
+    nonisolated(unsafe) private(set) static var responseTypeWhiteList: [String] = [
         "application/json",
         "application/ld+json",
         "application/xml",
@@ -161,13 +162,13 @@ public extension LoggingEventMonitor {
         "application/rtf"
     ]
     
-    static var useMimeTypeWhitelist: Bool = true
-    
-    static func logMimeType(_ mimeType: String) {
+    nonisolated(unsafe) static var useMimeTypeWhitelist: Bool = true
+
+    nonisolated(unsafe) static func logMimeType(_ mimeType: String) {
         responseTypeWhiteList.append(mimeType)
     }
     
-    static func stopLoggingMimeType(_ mimeType: String) {
+    nonisolated(unsafe) static func stopLoggingMimeType(_ mimeType: String) {
         responseTypeWhiteList.removeAll(where: {
             $0 == mimeType
         })

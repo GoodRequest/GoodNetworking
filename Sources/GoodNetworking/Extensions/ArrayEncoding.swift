@@ -5,12 +5,12 @@
 //  Created by Andrej Jasso on 18/10/2023.
 //
 
-import Alamofire
+@preconcurrency import Alamofire
 import Foundation
 
 /// Extension that allows an array be sent as a request parameters
-public extension Array {
-    
+public extension Array where Element: Sendable {
+
     /// Convert the receiver array to a `Parameters` object.
     func asParameters() -> Parameters {
         return [ArrayEncoding.arrayParametersKey: self]

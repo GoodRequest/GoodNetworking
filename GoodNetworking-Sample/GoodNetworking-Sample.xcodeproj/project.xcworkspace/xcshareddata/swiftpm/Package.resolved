@@ -1,12 +1,13 @@
 {
+  "originHash" : "a15c6bff5b5ba869a9e1ce557322c5cd9bd2dd53dedca732a66d309f7c1f53da",
   "pins" : [
     {
       "identity" : "alamofire",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire.git",
       "state" : {
-        "revision" : "723fa5a6c65812aec4a0d7cc432ee198883b6e00",
-        "version" : "5.9.0"
+        "revision" : "f455c2975872ccd2d9c81594c658af65716e9b9a",
+        "version" : "5.9.1"
       }
     },
     {
@@ -17,7 +18,43 @@
         "revision" : "1eaf3b6c6882bed10f6e7b119665599dd2329aa1",
         "version" : "4.3.0"
       }
+    },
+    {
+      "identity" : "combineext",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CombineCommunity/CombineExt.git",
+      "state" : {
+        "revision" : "d7b896fa9ca8b47fa7bcde6b43ef9b70bf8c1f56",
+        "version" : "1.8.1"
+      }
+    },
+    {
+      "identity" : "goodextensions-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GoodRequest/GoodExtensions-iOS",
+      "state" : {
+        "branch" : "feature/swift6",
+        "revision" : "8a38f0a3cc3931aa5050b76544973417c1b93c15"
+      }
+    },
+    {
+      "identity" : "goodswiftui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GoodRequest/GoodSwiftUI",
+      "state" : {
+        "branch" : "feature/swift6",
+        "revision" : "f0c9424fd09ba79a4e5bfecddbfb65c8e9bf65f2"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-syntax.git",
+      "state" : {
+        "revision" : "4c6cc0a3b9e8f14b3ae2307c5ccae4de6167ac2c",
+        "version" : "600.0.0-prerelease-2024-06-12"
+      }
     }
   ],
-  "version" : 2
+  "version" : 3
 }
