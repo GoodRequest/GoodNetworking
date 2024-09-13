@@ -35,8 +35,7 @@ let package = Package(
             path: "./Sources/GoodNetworking",
             resources: [.copy("PrivacyInfo.xcprivacy")],
             swiftSettings: [
-                .swiftLanguageVersion(.v6),
-                .unsafeFlags(["-Onone"])
+                .swiftLanguageMode(.v6),
             ]
         ),
         .target(
@@ -46,14 +45,14 @@ let package = Package(
                 .product(name: "AlamofireImage", package: "AlamofireImage")
             ],
             path: "./Sources/GoodNetworkingAlamofire",
-            swiftSettings: [.swiftLanguageVersion(.v5)]
+            swiftSettings: [.swiftLanguageMode(.v5)]
         ),
         .target(
             name: "Mockable",
             dependencies: ["GoodNetworking"],
             path: "./Sources/Mockable",
             resources: [.copy("PrivacyInfo.xcprivacy")],
-            swiftSettings: [.swiftLanguageVersion(.v6)]
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "GoodNetworkingTests",
@@ -65,7 +64,7 @@ let package = Package(
                     .copy("Resources/IsoDate.json"),
                     .copy("Resources/MilisecondsDate.json")
                 ],
-            swiftSettings: [.swiftLanguageVersion(.v6)]
+            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]
 )
