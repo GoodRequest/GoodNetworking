@@ -11,8 +11,8 @@ import SwiftUI
 
 @propertyWrapper public struct Remote<R: Resource>: DynamicProperty {
 
-    @ObservedObject @Observable private var resourceState: ResourceState<R>
-    @ObservedObject @Observable private var dataTask: AnyCancellable?
+    @ObservedObject @ObservableValue private var resourceState: ResourceState<R>
+    @ObservedObject @ObservableValue private var dataTask: AnyCancellable?
 
     private let session: NetworkSession
     private let debounce: TimeInterval
@@ -54,8 +54,8 @@ import SwiftUI
         self.session = session
         self.debounce = debounce
 
-        self._resourceState = ObservedObject(wrappedValue: Observable(wrappedValue))
-        self._dataTask = ObservedObject(wrappedValue: Observable(nil))
+        self._resourceState = ObservedObject(wrappedValue: ObservableValue(wrappedValue))
+        self._dataTask = ObservedObject(wrappedValue: ObservableValue(nil))
     }
 
     private func makeDataTask(for resource: R) -> AnyCancellable {
@@ -81,8 +81,8 @@ extension Remote {
         self.session = session
         self.debounce = debounce
 
-        self._resourceState = ObservedObject(wrappedValue: Observable(.loading))
-        self._dataTask = ObservedObject(wrappedValue: Observable(nil))
+        self._resourceState = ObservedObject(wrappedValue: ObservableValue(.loading))
+        self._dataTask = ObservedObject(wrappedValue: ObservableValue(nil))
 
         dataTask = makeDataTask(from: wrappedValue, mapping: mapping)
     }
@@ -95,8 +95,8 @@ extension Remote {
         self.session = session
         self.debounce = debounce
 
-        self._resourceState = ObservedObject(wrappedValue: Observable(.loading))
-        self._dataTask = ObservedObject(wrappedValue: Observable(nil))
+        self._resourceState = ObservedObject(wrappedValue: ObservableValue(.loading))
+        self._dataTask = ObservedObject(wrappedValue: ObservableValue(nil))
 
         dataTask = makeDataTask(from: wrappedValue, mapping: { $0 })
     }

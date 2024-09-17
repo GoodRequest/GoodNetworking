@@ -7,7 +7,7 @@
 
 import Combine
 
-@propertyWrapper public final class Observable<T>: ObservableObject {
+@propertyWrapper public final class ObservableValue<T>: ObservableObject {
 
     @Published public var wrappedValue: T
 

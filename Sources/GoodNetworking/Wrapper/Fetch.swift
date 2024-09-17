@@ -26,8 +26,8 @@ import SwiftUI
 /// ```
 @propertyWrapper public struct Fetch<Q: Query>: DynamicProperty {
 
-    @ObservedObject @Observable private var observableQuery: Q
-    @ObservedObject @Observable private var dataTask: AnyCancellable?
+    @ObservedObject @ObservableValue private var observableQuery: Q
+    @ObservedObject @ObservableValue private var dataTask: AnyCancellable?
 
     private let session: NetworkSession
 
@@ -48,8 +48,8 @@ import SwiftUI
     public init(wrappedValue: Q, session: NetworkSession = .default) {
         self.session = session
 
-        self._observableQuery = ObservedObject(wrappedValue: Observable(wrappedValue))
-        self._dataTask = ObservedObject(wrappedValue: Observable(nil))
+        self._observableQuery = ObservedObject(wrappedValue: ObservableValue(wrappedValue))
+        self._dataTask = ObservedObject(wrappedValue: ObservableValue(nil))
 
         self.dataTask = makeDataTask(from: wrappedValue)
     }
