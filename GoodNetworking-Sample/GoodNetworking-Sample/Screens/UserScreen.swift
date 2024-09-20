@@ -15,6 +15,9 @@ struct UserScreen: View {
     // MARK: - Wrappers
 
     @State private var user = Resource(session: .sampleSession, remote: RemoteUser.self)
+    @StateObject private var provider: SampleSelectableBaseUrlProvider = NetworkSession.baseURLProvider!
+    @State private var selectedServer: ApiServer = .init(name: "Empty", url: "")
+    @State private var availableServers: [ApiServer] = []
 
     // MARK: - View state
 
@@ -31,6 +34,16 @@ struct UserScreen: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
+                Picker("Server", selection: $selectedServer) {
+                    ForEach(availableServers, id: \.self) { server in
+                        VStack {
+                            Text(server.name)
+                            Text(server.url)
+                        }
+                    }
+                }
+                .pickerStyle(MenuPickerStyle())
+
                 userView(user: user.state)
             }
             .padding()
@@ -47,6 +60,13 @@ struct UserScreen: View {
                 try await user.read(request: UserRequest(id: userId))
             } catch {
                 print(error)
+            }
+            self.selectedServer = await provider.getSelectedServer()
+            self.availableServers = await provider.serverCollection.servers
+        }
+        .onChange(of: selectedServer) {
+            Task {
+                await provider.setSelectedServer(selectedServer)
             }
         }
         .navigationTitle("User detail")
