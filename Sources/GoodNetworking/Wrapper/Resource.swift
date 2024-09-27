@@ -7,6 +7,8 @@
 
 import Alamofire
 import SwiftUI
+import GoodLogger
+import OSLog
 
 // MARK: - Resource
 
@@ -150,7 +152,7 @@ public struct RawResponse: Sendable {
 
 extension Resource {
 
-    private var logger: SessionLogger {
+    private var logger: GoodLogger {
         if #available(iOS 14, *) {
             return OSLogLogger()
         } else {
@@ -159,27 +161,27 @@ extension Resource {
     }
 
     public func create() async throws {
-        logger.log(level: .error, message: "CREATE operation not defined for resource \(String(describing: R.self))")
+        log(level: .error, message: "CREATE operation not defined for resource \(String(describing: R.self))")
     }
 
     public func read(forceReload: Bool = false) async throws {
-        logger.log(level: .error, message: "READ operation not defined for resource \(String(describing: R.self))")
+        log(level: .error, message: "READ operation not defined for resource \(String(describing: R.self))")
     }
 
     public func updateRemote() async throws {
-        logger.log(level: .error, message: "UPDATE operation not defined for resource \(String(describing: R.self))")
+        log(level: .error, message: "UPDATE operation not defined for resource \(String(describing: R.self))")
     }
 
     public func delete() async throws {
-        logger.log(level: .error, message: "DELETE operation not defined for resource \(String(describing: R.self))")
+        log(level: .error, message: "DELETE operation not defined for resource \(String(describing: R.self))")
     }
 
     public func firstPage(forceReload: Bool = false) async throws {
-        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))")
+        log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))")
     }
 
     public func nextPage() async throws {
-        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))")
+        log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))")
     }
 
 }
@@ -190,7 +192,7 @@ extension Resource where R: Creatable {
 
     public func create() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(level: .error, message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.")
+            return log(level: .error, message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.")
         }
         try await create(request: request)
     }
@@ -240,7 +242,7 @@ extension Resource where R: Readable {
         let resource = state.value
         guard let request = try R.request(from: resource) else {
             self.state = .idle
-            return logger.log(level: .error, message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.")
+            return log(level: .error, message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.")
         }
 
         try await read(request: request, forceReload: forceReload)
@@ -248,7 +250,7 @@ extension Resource where R: Readable {
 
     public func read(request: R.ReadRequest, forceReload: Bool = false) async throws {
         guard !state.isAvailable || forceReload else {
-            return logger.log(level: .info, message: "Skipping read - value already exists")
+            return log(level: .info, message: "Skipping read - value already exists")
         }
 
         let resource = state.value
@@ -287,7 +289,7 @@ extension Resource where R: Updatable {
 
     public func updateRemote() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(level: .error, message: "Updating resource to nil always fails! Use DELETE instead.")
+            return log(level: .error, message: "Updating resource to nil always fails! Use DELETE instead.")
         }
         try await updateRemote(request: request)
     }
@@ -334,7 +336,7 @@ extension Resource where R: Deletable {
 
     public func delete() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(level: .error, message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.")
+            return log(level: .error, message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.")
         }
         try await delete(request: request)
     }
@@ -391,6 +393,7 @@ extension Resource: Collection where R: Listable {
     }
 
 }
+
 extension Resource: BidirectionalCollection where R: Listable {}
 
 extension Resource: RandomAccessCollection where R: Listable {
@@ -496,6 +499,14 @@ public struct ResourcePager<R: Listable>: View {
         } else {
             isFinished = true
         }
+    }
+
+}
+
+extension Resource {
+
+    private func log(level: OSLogType = .info, message: String, privacy: PrivacyType = .auto) {
+        logger.log(level: level, message: message, privacy: privacy)
     }
 
 }

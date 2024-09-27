@@ -1,5 +1,5 @@
 {
-  "originHash" : "a15c6bff5b5ba869a9e1ce557322c5cd9bd2dd53dedca732a66d309f7c1f53da",
+  "originHash" : "bcba68cb977af5f9a9e31cc77d2e125ee154683f947da89a246954ace31b00ae",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -33,8 +33,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GoodRequest/GoodExtensions-iOS",
       "state" : {
-        "branch" : "feature/swift6",
-        "revision" : "70db087418957bce50f67beef9e7251108e8f454"
+        "branch" : "main",
+        "revision" : "e81ad93c9e8b2d130a56633804e798b76a727a43"
+      }
+    },
+    {
+      "identity" : "goodlogger",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/GoodRequest/GoodLogger.git",
+      "state" : {
+        "revision" : "f5221b56019bf99d1281b74b441dd56f092bfc7b",
+        "version" : "1.2.1"
       }
     },
     {
@@ -42,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GoodRequest/GoodSwiftUI",
       "state" : {
-        "branch" : "feature/swift6",
-        "revision" : "6d755a19b2cdd87e47c13fee9718a7e7f2d29a33"
+        "branch" : "main",
+        "revision" : "09c56bd6687049dc9085326be456f0749c6244ec"
       }
     },
     {
@@ -51,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-syntax.git",
       "state" : {
-        "revision" : "515f79b522918f83483068d99c68daeb5116342d",
-        "version" : "600.0.0-prerelease-2024-09-04"
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
       }
     }
   ],

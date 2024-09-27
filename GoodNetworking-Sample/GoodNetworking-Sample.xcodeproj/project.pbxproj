@@ -448,7 +448,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/GoodRequest/GoodExtensions-iOS";
 			requirement = {
-				branch = feature/swift6;
+				branch = main;
 				kind = branch;
 			};
 		};
@@ -456,7 +456,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/GoodRequest/GoodSwiftUI";
 			requirement = {
-				branch = feature/swift6;
+				branch = main;
 				kind = branch;
 			};
 		};
