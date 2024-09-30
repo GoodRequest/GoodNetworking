@@ -55,6 +55,7 @@ public actor NetworkSession {
     public let configuration: NetworkSessionConfiguration?
     public let baseUrl: String?
     public let baseURLProvider: BaseUrlProviding?
+    public let networkSessionProvider: NetworkSessionProviding?
 
     // MARK: - Initialization
 
@@ -62,11 +63,13 @@ public actor NetworkSession {
     public init(
         baseUrl: String? = nil,
         baseUrlProvider: BaseUrlProviding? = nil,
-        configuration: NetworkSessionConfiguration = .default
+        configuration: NetworkSessionConfiguration = .default,
+        networkSessionProvider: NetworkSessionProviding? = nil
     ) {
+        self.baseUrl = baseUrl
         self.baseURLProvider = baseUrlProvider
         self.configuration = configuration
-        self.baseUrl = baseUrl
+        self.networkSessionProvider = networkSessionProvider
 
         session = Alamofire.Session(
             configuration: configuration.urlSessionConfiguration,
@@ -89,9 +92,9 @@ public extension NetworkSession {
     ///   property will be used.
     func request<Result: Decodable & Sendable>(endpoint: Endpoint, base: String? = nil) async throws(NetworkError) -> Result {
         let resolvedBase = try await resolveBase(baseResolver: baseURLProvider, explicitBase: base)
-
+        let resolvedSession = await resolveSession(sessionResolver: networkSessionProvider)
         do {
-            return try await session.request(
+            return try await resolvedSession.request(
                 try? endpoint.url(on: resolvedBase),
                 method: endpoint.method,
                 parameters: endpoint.parameters?.dictionary,
@@ -118,6 +121,14 @@ public extension NetworkSession {
             encoding: endpoint.encoding,
             headers: endpoint.headers
         )
+    }
+
+    private func resolveSession(sessionResolver: NetworkSessionProviding?) async -> Alamofire.Session {
+        if let sessionResolver {
+            return await sessionResolver.resolveSession()
+        } else {
+            return session
+        }
     }
 
     private func resolveBase(baseResolver: BaseUrlProviding?, explicitBase: String? = nil) async throws(NetworkError) -> String {
