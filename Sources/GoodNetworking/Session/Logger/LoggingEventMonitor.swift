@@ -7,6 +7,7 @@
 
 @preconcurrency import Alamofire
 import Combine
+import GoodLogger
 import Foundation
 
 #warning("fix this concurrency mess")
@@ -26,9 +27,9 @@ import Foundation
 
     }
 
-    private var logger: (any SessionLogger)?
+    private var logger: (any GoodLogger)?
 
-    public init(logger: (any SessionLogger)?) {
+    public init(logger: (any GoodLogger)?) {
         self.logger = logger
     }
 
@@ -68,9 +69,9 @@ import Foundation
 
         switch response.result {
         case .success:
-            logger?.log(level: .debug, message: logMessage)
+            logger?.log(level: .debug, message: logMessage, privacy: .auto)
         case .failure:
-            logger?.log(level: .fault, message: logMessage)
+            logger?.log(level: .fault, message: logMessage, privacy: .auto)
         }
     }
 

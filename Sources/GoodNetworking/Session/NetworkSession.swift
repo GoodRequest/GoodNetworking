@@ -51,20 +51,25 @@ public actor NetworkSession {
 
     // MARK: - Variables
 
-    public let session: Alamofire.Session
+    public var session: Alamofire.Session
     public let configuration: NetworkSessionConfiguration?
-
     public let baseUrl: String?
+    public let baseURLProvider: BaseUrlProviding?
+    public let networkSessionProvider: NetworkSessionProviding?
 
     // MARK: - Initialization
 
     /// A public initializer that sets the baseURL and configuration properties, and initializes the underlying `Session` object.
     public init(
         baseUrl: String? = nil,
-        configuration: NetworkSessionConfiguration = .default
+        baseUrlProvider: BaseUrlProviding? = nil,
+        configuration: NetworkSessionConfiguration = .default,
+        networkSessionProvider: NetworkSessionProviding? = nil
     ) {
         self.baseUrl = baseUrl
+        self.baseURLProvider = baseUrlProvider
         self.configuration = configuration
+        self.networkSessionProvider = networkSessionProvider
 
         session = Alamofire.Session(
             configuration: configuration.urlSessionConfiguration,
@@ -80,18 +85,20 @@ public actor NetworkSession {
 
 public extension NetworkSession {
 
-    
     /// Send request to an endpoint on a given base URL.
     /// - Parameters:
     ///   - endpoint: Endpoint instance representing the endpoint
     ///   - base: Base address to use when building the endpoint URL. Optional, if not provided, the default `baseUrl`
     ///   property will be used.
     func request<Result: Decodable & Sendable>(endpoint: Endpoint, base: String? = nil) async throws(NetworkError) -> Result {
-        let baseUrl = base ?? baseUrl ?? ""
-
+        let resolvedBase = try await resolveBase(baseResolver: baseURLProvider, explicitBase: base)
+        let resolvedSession = await resolveSession(sessionResolver: networkSessionProvider)
+        if session.sessionConfiguration != resolvedSession.sessionConfiguration {
+            session = resolvedSession
+        }
         do {
             return try await session.request(
-                try? endpoint.url(on: baseUrl),
+                try? endpoint.url(on: resolvedBase),
                 method: endpoint.method,
                 parameters: endpoint.parameters?.dictionary,
                 encoding: endpoint.encoding,
@@ -106,6 +113,7 @@ public extension NetworkSession {
         }
     }
 
+    @available(*, deprecated, renamed: "request(endpoint:base:)")
     func request(endpoint: Endpoint, base: String? = nil) -> DataRequest {
         let baseUrl = base ?? baseUrl ?? ""
 
@@ -116,6 +124,28 @@ public extension NetworkSession {
             encoding: endpoint.encoding,
             headers: endpoint.headers
         )
+    }
+
+    private func resolveSession(sessionResolver: NetworkSessionProviding?) async -> Alamofire.Session {
+        if let sessionResolver {
+            return await sessionResolver.resolveSession()
+        } else {
+            return session
+        }
+    }
+
+    private func resolveBase(baseResolver: BaseUrlProviding?, explicitBase: String? = nil) async throws(NetworkError) -> String {
+        var resolvedBase = explicitBase
+
+        if resolvedBase == nil, let baseResolver {
+            resolvedBase = await baseResolver.resolveBaseUrl()
+        }
+
+        guard let resolvedBase else {
+            throw .session
+        }
+
+        return resolvedBase
     }
 
 }

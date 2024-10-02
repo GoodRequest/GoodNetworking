@@ -15,6 +15,9 @@ struct UserScreen: View {
     // MARK: - Wrappers
 
     @Resource(session: .sampleSession, remote: RemoteUser.self) var user
+    @StateObject private var provider: SampleSelectableBaseUrlProvider = NetworkSession.baseURLProvider!
+    @State private var selectedServer: ApiServer = .init(name: "Empty", url: "")
+    @State private var availableServers: [ApiServer] = []
 
     // MARK: - View state
 
@@ -29,28 +32,49 @@ struct UserScreen: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                userView(user: _user.state)
+        if #available(iOS 17.0, *) {
+            ScrollView {
+                VStack(spacing: 24) {
+                    Picker("Server", selection: $selectedServer) {
+                        ForEach(availableServers, id: \.self) { server in
+                            VStack {
+                                Text(server.name)
+                                Text(server.url)
+                            }
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+
+                    userView(user: _user.state)
+                }
+                .padding()
             }
-            .padding()
-        }
-        .refreshable {
-            do {
-                try await _user.read(forceReload: true)
-            } catch {
-                print(error)
+            .refreshable {
+                do {
+                    try await _user.read(forceReload: true)
+                } catch {
+                    print(error)
+                }
             }
-        }
-        .task {
-            do {
-                try await _user.read(request: UserRequest(id: userId))
-            } catch {
-                print(error)
+            .task {
+                do {
+                    try await _user.read(request: UserRequest(id: userId))
+                } catch {
+                    print(error)
+                }
+                self.selectedServer = await provider.getSelectedServer()
+                self.availableServers = await provider.serverCollection.servers
             }
+            .onChange(of: selectedServer) {
+                Task {
+                    await provider.setSelectedServer(selectedServer)
+                }
+            }
+            .navigationTitle("User detail")
+            .navigationBarTitleDisplayMode(.inline)
+        } else {
+            Text(verbatim: "Upgrade iOS version 😂")
         }
-        .navigationTitle("User detail")
-        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func loadingView() -> some View {

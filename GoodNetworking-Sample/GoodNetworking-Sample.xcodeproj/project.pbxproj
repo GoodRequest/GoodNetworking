@@ -19,6 +19,7 @@
 		09A9ECAE2C4AC9810032C359 /* JobUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9ECAD2C4AC9810032C359 /* JobUser.swift */; };
 		5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967B299C190B00DFAEAE /* GoodNetworking */; };
 		5D4A967E299C190B00DFAEAE /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967D299C190B00DFAEAE /* Mockable */; };
+		5D7C80652CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */; };
 		EACEC3FA29953DCB008242AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC3F929953DCB008242AA /* AppDelegate.swift */; };
 		EACEC40829953DCD008242AA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EACEC40629953DCD008242AA /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
@@ -31,6 +32,7 @@
 		09A9ECA22C4811B00032C359 /* UserListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserListScreen.swift; sourceTree = "<group>"; };
 		09A9ECAD2C4AC9810032C359 /* JobUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobUser.swift; sourceTree = "<group>"; };
 		5D4A967A299C18FB00DFAEAE /* GoodNetworking */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = GoodNetworking; path = ..; sourceTree = "<group>"; };
+		5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleSelectableBaseUrlProvider.swift; sourceTree = "<group>"; };
 		EACEC3F629953DCB008242AA /* GoodNetworking-Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GoodNetworking-Sample.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EACEC3F929953DCB008242AA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EACEC40729953DCD008242AA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -77,6 +79,7 @@
 			children = (
 				09A9EC942C4800B90032C359 /* NetworkSessions.swift */,
 				09A9EC992C48015C0032C359 /* SampleEndpoint.swift */,
+				5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -223,6 +226,7 @@
 				09A9ECAE2C4AC9810032C359 /* JobUser.swift in Sources */,
 				09A9EC952C4800BA0032C359 /* NetworkSessions.swift in Sources */,
 				09A9EC922C48002C0032C359 /* User.swift in Sources */,
+				5D7C80652CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -444,7 +448,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/GoodRequest/GoodExtensions-iOS";
 			requirement = {
-				branch = feature/swift6;
+				branch = main;
 				kind = branch;
 			};
 		};
@@ -452,7 +456,7 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/GoodRequest/GoodSwiftUI";
 			requirement = {
-				branch = feature/swift6;
+				branch = main;
 				kind = branch;
 			};
 		};
