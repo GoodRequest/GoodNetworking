@@ -51,7 +51,7 @@ public actor NetworkSession {
 
     // MARK: - Variables
 
-    public let session: Alamofire.Session
+    public var session: Alamofire.Session
     public let configuration: NetworkSessionConfiguration?
     public let baseUrl: String?
     public let baseURLProvider: BaseUrlProviding?
@@ -93,8 +93,11 @@ public extension NetworkSession {
     func request<Result: Decodable & Sendable>(endpoint: Endpoint, base: String? = nil) async throws(NetworkError) -> Result {
         let resolvedBase = try await resolveBase(baseResolver: baseURLProvider, explicitBase: base)
         let resolvedSession = await resolveSession(sessionResolver: networkSessionProvider)
+        if session.sessionConfiguration != resolvedSession.sessionConfiguration {
+            session = resolvedSession
+        }
         do {
-            return try await resolvedSession.request(
+            return try await session.request(
                 try? endpoint.url(on: resolvedBase),
                 method: endpoint.method,
                 parameters: endpoint.parameters?.dictionary,
