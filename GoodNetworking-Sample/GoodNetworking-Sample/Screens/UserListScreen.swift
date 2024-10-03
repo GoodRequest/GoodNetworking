@@ -13,7 +13,7 @@ struct UserListScreen: View {
 
     // MARK: - Wrappers
 
-    @Resource(session: .sampleSession, remote: RemoteUser.self) var users
+    @State private var users = Resource(session: .sampleSession, remote: RemoteUser.self)
 
     // MARK: - View state
 
@@ -30,7 +30,7 @@ struct UserListScreen: View {
     var body: some View {
         List {
             Section {
-                ForEach(_users) { user in
+                ForEach(users.elements) { user in
                     NavigationLink {
                         UserScreen(userId: user.id)
                     } label: {
@@ -46,12 +46,12 @@ struct UserListScreen: View {
                     Label("Create new", systemImage: "plus")
                 }
             } footer: {
-                ResourcePager(resource: _users)
+                ResourcePager(resource: users)
                     .frame(maxWidth: .infinity)
                     .padding()
             }
         }
-        .redacted(reason: _users.state.isAvailable ? [] : [.placeholder])
+        .redacted(reason: users.state.isAvailable ? [] : [.placeholder])
         .refreshable { await reload() }
         .task { await loadList() }
         .navigationTitle("All employees")
@@ -64,7 +64,7 @@ extension UserListScreen {
 
     func reload() async {
         do {
-            try await _users.firstPage(forceReload: true)
+            try await users.firstPage(forceReload: true)
         } catch {
             print("Error reloading users: \(error.localizedDescription)")
         }
@@ -73,7 +73,7 @@ extension UserListScreen {
     func loadList() async {
         guard !didLoadList else { return }
         do {
-            try await _users.firstPage()
+            try await users.firstPage()
         } catch {
             print("Error loading users: \(error.localizedDescription)")
         }

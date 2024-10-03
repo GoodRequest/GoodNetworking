@@ -11,3 +11,9 @@ public protocol Placeholdable: Equatable {
     static var placeholder: Self { get }
 
 }
+
+extension Array: Placeholdable where Element: Placeholdable {
+
+    public static var placeholder: [Element] { [.placeholder, .placeholder, .placeholder] }
+
+}

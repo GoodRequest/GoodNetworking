@@ -7,6 +7,10 @@
 
 #warning("TODO: Add documentation")
 
+import Foundation
+import Hitch
+import Sextant
+
 // MARK: - Creatable
 
 public typealias Post = Creatable
@@ -53,7 +57,6 @@ public extension Creatable where CreateResponse == Resource {
 
 // MARK: - Readable
 
-public typealias Query = Readable
 public protocol Readable: RemoteResource {
 
     associatedtype ReadRequest: (Sendable)
@@ -83,10 +86,47 @@ public extension Readable {
 
 }
 
+public extension Readable where ReadRequest == Void {
+
+    nonisolated static func request(from resource: Resource?) throws(NetworkError) -> ReadRequest? {
+        ()
+    }
+
+}
+
 public extension Readable where ReadResponse == Resource {
 
     nonisolated static func resource(from response: ReadResponse) throws(NetworkError) -> Resource {
         response
+    }
+
+}
+
+// MARK: - Readable - Query
+
+public protocol Query: Readable where ReadResponse == Data {
+
+    nonisolated static func query() -> String
+
+}
+
+public extension Query where Resource: Decodable {
+
+    nonisolated static func resource(from response: ReadResponse) throws(NetworkError) -> Resource {
+        Sextant.shared.query(response, values: Hitch(string: query())) ?? .placeholder
+    }
+
+}
+
+public extension Query {
+
+    static func read(
+        using session: NetworkSession,
+        request: ReadRequest
+    ) async throws(NetworkError) -> ReadResponse {
+        let endpoint: Endpoint = try Self.endpoint(request)
+        let response: ReadResponse = try await session.requestRaw(endpoint: endpoint)
+        return response
     }
 
 }

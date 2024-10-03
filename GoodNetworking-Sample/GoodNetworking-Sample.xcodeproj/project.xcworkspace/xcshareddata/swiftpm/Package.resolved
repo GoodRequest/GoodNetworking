@@ -1,5 +1,5 @@
 {
-  "originHash" : "a15c6bff5b5ba869a9e1ce557322c5cd9bd2dd53dedca732a66d309f7c1f53da",
+  "originHash" : "43e0fb5cb8c5f65e7230c0cdf54c846dc50f59b56be42aceb814fab01706aea8",
   "pins" : [
     {
       "identity" : "alamofire",
@@ -20,6 +20,15 @@
       }
     },
     {
+      "identity" : "chronometer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Chronometer.git",
+      "state" : {
+        "revision" : "d21b89e5cb5929b5175bdb3ad710a52cbf497eaa",
+        "version" : "0.1.12"
+      }
+    },
+    {
       "identity" : "combineext",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CombineCommunity/CombineExt.git",
@@ -31,19 +40,46 @@
     {
       "identity" : "goodextensions-ios",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/GoodRequest/GoodExtensions-iOS",
+      "location" : "https://github.com/GoodRequest/GoodExtensions-iOS.git",
       "state" : {
-        "branch" : "feature/swift6",
-        "revision" : "70db087418957bce50f67beef9e7251108e8f454"
+        "revision" : "dd6fe6484a87f4ccde73136d491b2339e2a3ab98",
+        "version" : "2.0.0"
       }
     },
     {
       "identity" : "goodswiftui",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/GoodRequest/GoodSwiftUI",
+      "location" : "https://github.com/GoodRequest/GoodSwiftUI.git",
       "state" : {
-        "branch" : "feature/swift6",
-        "revision" : "6d755a19b2cdd87e47c13fee9718a7e7f2d29a33"
+        "revision" : "97f65963cd984a53b83f7715d5b64edfce88dec9",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "hitch",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Hitch.git",
+      "state" : {
+        "revision" : "d6c147a1d70992db39a141cb5bf9cf8fbb776250",
+        "version" : "0.4.148"
+      }
+    },
+    {
+      "identity" : "sextant",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Sextant.git",
+      "state" : {
+        "branch" : "v0.4.31",
+        "revision" : "52a77d0bce0210cf9557faef7fd0adb9a6da02fb"
+      }
+    },
+    {
+      "identity" : "spanker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Spanker.git",
+      "state" : {
+        "revision" : "d4b439bf76a40fb45d86a24d13b9c26e7d630eee",
+        "version" : "0.2.49"
       }
     },
     {
