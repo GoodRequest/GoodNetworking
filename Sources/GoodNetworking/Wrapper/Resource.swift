@@ -20,63 +20,29 @@ public struct RawResponse: Sendable {
 
 }
 
-@propertyWrapper public struct Resource<R: RemoteResource>: DynamicProperty, Sendable {
+@available(iOS 17.0, *)
+@MainActor @Observable @dynamicMemberLookup public final class Resource<R: RemoteResource> {
 
-    @State private var _session: FutureSession
-    @State private var _rawResponse: RawResponse = RawResponse()
+    private var session: FutureSession
+    private var rawResponse: RawResponse = RawResponse()
+    private var remote: R.Type
 
-    @State private var _remote: R.Type
-    @State private var _state: ResourceState<R.Resource, NetworkError>
-    @State private var _listState: ResourceState<[R.Resource], NetworkError>
+    private(set) public var state: ResourceState<R.Resource, NetworkError>
+    private var listState: ResourceState<[R.Resource], NetworkError>
 
-    public var wrappedValue: R.Resource? {
+    public var value: R.Resource? {
         get {
             state.value
         }
-        nonmutating set {
-            updateResource(newValue: newValue)
+        set {
+            if let newValue {
+                state = .pending(newValue)
+                listState = .pending([newValue])
+            } else {
+                state = .idle
+                listState = .idle
+            }
         }
-    }
-
-    private var remote: R.Type {
-        @storageRestrictions(initializes: __remote)
-        init { __remote = State(initialValue: newValue) }
-        get { _remote }
-        nonmutating set { _remote = newValue }
-    }
-
-    public var state: ResourceState<R.Resource, NetworkError> {
-        @storageRestrictions(initializes: __state)
-        init { __state = State(initialValue: newValue) }
-        get { _state }
-        nonmutating set { _state = newValue }
-    }
-
-    public var listState: ResourceState<[R.Resource], NetworkError> {
-        @storageRestrictions(initializes: __listState)
-        init { __listState = State(initialValue: newValue) }
-        get { _listState }
-        nonmutating set { _listState = newValue }
-    }
-
-    private var session: FutureSession {
-        @storageRestrictions(initializes: __session)
-        init { __session = State(initialValue: newValue) }
-        get { _session }
-        nonmutating set { _session = newValue }
-    }
-
-    private var rawResponse: RawResponse {
-        get { _rawResponse }
-        nonmutating set { _rawResponse = newValue }
-    }
-
-    public var projectedValue: Binding<R.Resource?> {
-        Binding(get: {
-            wrappedValue
-        }, set: { newValue in
-            wrappedValue = newValue
-        })
     }
 
     public init(
@@ -131,23 +97,19 @@ public struct RawResponse: Sendable {
         return self
     }
 
-    private func updateResource(newValue: R.Resource?) {
-        guard let newValue else {
-            Task { try await delete() }
-            return
-        }
-        state = .pending(newValue)
-        if state.value == nil {
-            Task { try await create() }
-        } else if newValue != state.value {
-            Task { try await updateRemote() }
-        }
+    public subscript<T>(dynamicMember dynamicMember: KeyPath<R.Resource, T>) -> T? {
+        return state.value?[keyPath: dynamicMember]
+    }
+
+    public subscript<T>(dynamicMember dynamicMember: WritableKeyPath<R.Resource, T>) -> T? {
+        return state.value?[keyPath: dynamicMember]
     }
 
 }
 
 // MARK: - Operations
 
+@available(iOS 17.0, *)
 extension Resource {
 
     private var logger: SessionLogger {
@@ -186,6 +148,7 @@ extension Resource {
 
 // MARK: - Create
 
+@available(iOS 17.0, *)
 extension Resource where R: Creatable {
 
     public func create() async throws {
@@ -233,6 +196,7 @@ extension Resource where R: Creatable {
 
 // MARK: - Read
 
+@available(iOS 17.0, *)
 extension Resource where R: Readable {
 
     // forceReload is default true, when resource is already set, calling read() is expected to always reload the data
@@ -283,6 +247,7 @@ extension Resource where R: Readable {
 
 // MARK: - Update
 
+@available(iOS 17.0, *)
 extension Resource where R: Updatable {
 
     public func updateRemote() async throws {
@@ -330,6 +295,7 @@ extension Resource where R: Updatable {
 
 // MARK: - Delete
 
+@available(iOS 17.0, *)
 extension Resource where R: Deletable {
 
     public func delete() async throws {
@@ -364,15 +330,10 @@ extension Resource where R: Deletable {
 
 // MARK: - List
 
-extension Resource: Sequence where R: Listable {
+@available(iOS 17.0, *)
+extension Resource where R: Listable {
 
-    public typealias Element = R.Resource
-
-}
-
-extension Resource: Collection where R: Listable {
-
-    internal var listElements: [R.Resource] {
+    public var elements: [R.Resource] {
         if let list = listState.value {
             return list
         } else {
@@ -380,27 +341,12 @@ extension Resource: Collection where R: Listable {
         }
     }
 
-    public subscript(position: Int) -> R.Resource {
-        _read {
-            if listElements.indices.contains(position) {
-                yield listElements[position]
-            } else {
-                yield .placeholder
-            }
-        }
-    }
-
-}
-extension Resource: BidirectionalCollection where R: Listable {}
-
-extension Resource: RandomAccessCollection where R: Listable {
-
     public var startIndex: Int {
-        listElements.startIndex
+        elements.startIndex
     }
 
     public var endIndex: Int {
-        listElements.endIndex
+        elements.endIndex
     }
 
     public func firstPage(forceReload: Bool = false) async throws {
@@ -464,7 +410,7 @@ extension Resource: RandomAccessCollection where R: Listable {
 
 // MARK: - Pager
 
-@available(iOS 14.0, *)
+@available(iOS 17.0, *)
 public struct ResourcePager<R: Listable>: View {
 
     @State private var isFinished = false

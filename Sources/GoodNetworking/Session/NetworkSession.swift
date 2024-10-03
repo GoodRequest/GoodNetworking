@@ -80,7 +80,6 @@ public actor NetworkSession {
 
 public extension NetworkSession {
 
-    
     /// Send request to an endpoint on a given base URL.
     /// - Parameters:
     ///   - endpoint: Endpoint instance representing the endpoint
@@ -98,6 +97,26 @@ public extension NetworkSession {
                 headers: endpoint.headers
             )
             .goodify(type: Result.self)
+            .value
+        } catch let error as AFError {
+            throw .alamofire(error)
+        } catch {
+            throw .session
+        }
+    }
+
+    func requestRaw(endpoint: Endpoint, base: String? = nil) async throws(NetworkError) -> Data {
+        let baseUrl = base ?? baseUrl ?? ""
+
+        do {
+            return try await session.request(
+                try? endpoint.url(on: baseUrl),
+                method: endpoint.method,
+                parameters: endpoint.parameters?.dictionary,
+                encoding: endpoint.encoding,
+                headers: endpoint.headers
+            )
+            .serializingData()
             .value
         } catch let error as AFError {
             throw .alamofire(error)

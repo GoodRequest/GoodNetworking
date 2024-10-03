@@ -14,7 +14,7 @@ struct UserScreen: View {
 
     // MARK: - Wrappers
 
-    @Resource(session: .sampleSession, remote: RemoteUser.self) var user
+    @State private var user = Resource(session: .sampleSession, remote: RemoteUser.self)
 
     // MARK: - View state
 
@@ -31,20 +31,20 @@ struct UserScreen: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                userView(user: _user.state)
+                userView(user: user.state)
             }
             .padding()
         }
         .refreshable {
             do {
-                try await _user.read(forceReload: true)
+                try await user.read(forceReload: true)
             } catch {
                 print(error)
             }
         }
         .task {
             do {
-                try await _user.read(request: UserRequest(id: userId))
+                try await user.read(request: UserRequest(id: userId))
             } catch {
                 print(error)
             }
