@@ -21,7 +21,7 @@ public struct RawResponse: Sendable {
 }
 
 @available(iOS 17.0, *)
-@MainActor @Observable @dynamicMemberLookup public final class Resource<R: RemoteResource> {
+@MainActor @Observable public final class Resource<R: RemoteResource> {
 
     private var session: FutureSession
     private var rawResponse: RawResponse = RawResponse()
@@ -95,14 +95,6 @@ public struct RawResponse: Sendable {
         self.state = .available(newValue)
         self.listState = .available([newValue])
         return self
-    }
-
-    public subscript<T>(dynamicMember dynamicMember: KeyPath<R.Resource, T>) -> T? {
-        return state.value?[keyPath: dynamicMember]
-    }
-
-    public subscript<T>(dynamicMember dynamicMember: WritableKeyPath<R.Resource, T>) -> T? {
-        return state.value?[keyPath: dynamicMember]
     }
 
 }
