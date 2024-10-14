@@ -6,6 +6,7 @@
 //
 
 import GoodNetworking
+import Foundation
 
 extension NetworkSession {
 
@@ -15,6 +16,28 @@ extension NetworkSession {
         NetworkSession.sampleSession = NetworkSession(
             baseUrl: "https://reqres.in/api"
         )
+    }
+
+    static var baseURLProvider: SampleSelectableBaseUrlProvider?
+
+    static func makeSampleAsyncSession() {
+        let prodServer = ApiServer(name: "Prod", url: "https://reqres.in/api")
+
+        #if DEBUG
+        let devServer = ApiServer(name: "Dev", url: "https://reqres.in/api/dev")
+        let testServer = ApiServer(name: "Test", url: "https://reqres.in/api/test")
+        let debugServerCollection = ApiServerCollection(
+            name: "Debug Server Collection",
+            servers: [devServer, testServer, prodServer],
+            defaultServer: devServer
+        )
+        let urlProvider = SampleSelectableBaseUrlProvider(serverCollection: debugServerCollection)
+        #else
+        let prodServerCollection = ApiServerCollection(servers: [prodServer], defaultServer: devServer, name: "Debug Server Collection")
+        let urlProvider = CustomBaseUrlProvider(serverCollection: prodServerCollection)
+        #endif
+        baseURLProvider = urlProvider
+        NetworkSession.sampleSession = NetworkSession(baseUrl: urlProvider)
     }
 
 }
