@@ -38,6 +38,20 @@ public protocol Endpoint {
 
 }
 
+public extension Endpoint {
+
+    var method: HTTPMethod { .get }
+    var parameters: EndpointParameters? { nil }
+    var headers: HTTPHeaders? { nil }
+    var encoding: ParameterEncoding { URLEncoding.default }
+
+    func url(on baseUrl: String) throws -> URL {
+       let baseUrl = try baseUrl.asURL()
+       return baseUrl.appendingPathComponent(path)
+    }
+    
+}
+
 // MARK: - Parameters
 
 /// Enum that represents the type of parameters to be sent with the request.

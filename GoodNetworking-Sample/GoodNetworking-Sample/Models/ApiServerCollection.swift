@@ -1,6 +1,6 @@
 //
 //  ApiServerCollection.swift
-//  GoodNetworking
+//  GoodNetworking-Sample
 //
 //  Created by Andrej Jasso on 23/09/2024.
 //

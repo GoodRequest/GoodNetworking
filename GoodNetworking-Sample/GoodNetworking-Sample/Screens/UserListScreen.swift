@@ -11,19 +11,11 @@ import GoodMacros
 
 struct UserListScreen: View {
 
-    // MARK: - Wrappers
+    // MARK: - State
 
     @State private var users = Resource(session: .sampleSession, remote: RemoteUser.self)
-
-    // MARK: - View state
-
     @State private var didLoadList = false
-
-    // MARK: - Properties
-
-    // MARK: - Initialization
-
-    // MARK: - Computed properties
+    @State private var presentServerSettings = false
 
     // MARK: - Body
 
@@ -40,7 +32,6 @@ struct UserListScreen: View {
                 }
 
                 NavigationLink {
-                    // UserEditScreen()
                     Text("edit here")
                 } label: {
                     Label("Create new", systemImage: "plus")
@@ -56,6 +47,18 @@ struct UserListScreen: View {
         .task { await loadList() }
         .navigationTitle("All employees")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $presentServerSettings) {
+            ServerPickerView()
+        }
+        .toolbar {
+            ToolbarItem {
+                Button(action: {
+                    presentServerSettings = true
+                }, label: {
+                    Image(systemName: "gear")
+                })
+            }
+        }
     }
 
 }
@@ -82,8 +85,8 @@ extension UserListScreen {
 
 }
 
-// MARK: - Previews
-
 #Preview {
+
     UserListScreen()
+
 }

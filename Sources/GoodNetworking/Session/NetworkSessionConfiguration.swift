@@ -10,7 +10,7 @@ import Foundation
 import GoodLogger
 
 /// NetworkSessionConfiguration represents the configuration used to create a NetworkSession object.
-public final class NetworkSessionConfiguration: Sendable {
+public struct NetworkSessionConfiguration: Sendable {
 
     // MARK: - Constants
 

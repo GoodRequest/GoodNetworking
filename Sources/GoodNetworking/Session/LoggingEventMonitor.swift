@@ -1,6 +1,6 @@
 //
 //  LoggingEventMonitor.swift
-//  
+//  GoodNetworking
 //
 //  Created by Matus Klasovity on 30/01/2024.
 //
@@ -10,14 +10,11 @@ import Combine
 import GoodLogger
 import Foundation
 
-#warning("fix this concurrency mess")
-@preconcurrency public class LoggingEventMonitor: EventMonitor, @unchecked Sendable {
+public struct LoggingEventMonitor: EventMonitor, Sendable {
 
     nonisolated(unsafe) public static var verbose: Bool = true
     nonisolated(unsafe) public static var prettyPrinted: Bool = true
     nonisolated(unsafe) public static var maxVerboseLogSizeBytes: Int = 100_000
-
-    private var messages: PassthroughSubject<String, Never>?
 
     public let queue = DispatchQueue(label: C.queueLabel, qos: .background)
 
@@ -27,16 +24,10 @@ import Foundation
 
     }
 
-    private var logger: (any GoodLogger)?
+    private let logger: (any GoodLogger)?
 
     public init(logger: (any GoodLogger)?) {
         self.logger = logger
-    }
-
-    public func subscribeToMessages() -> AnyPublisher<String, Never> {
-        let messages = PassthroughSubject<String, Never>()
-        self.messages = messages
-        return messages.eraseToAnyPublisher()
     }
 
     public func request<T>(_ request: DataRequest, didParseResponse response: DataResponse<T, AFError>) {
@@ -62,10 +53,6 @@ import Foundation
             errorMessage,
             responseBodyMessage
         ].compactMap { $0 }.joined(separator: "\n")
-
-        if let messages {
-            messages.send(logMessage)
-        }
 
         switch response.result {
         case .success:

@@ -82,7 +82,7 @@ enum SampleEndpoint: Endpoint {
 
     var encoding: ParameterEncoding {
         switch self {
-        case .updateUser(let user):
+        case .updateUser:
             JSONEncoding.default
 
         default:

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension UserDefaults {
+extension UserDefaults {
 
     func setObject<Object>(_ object: Object, forKey: String) throws where Object: Encodable {
         let encoder = JSONEncoder()

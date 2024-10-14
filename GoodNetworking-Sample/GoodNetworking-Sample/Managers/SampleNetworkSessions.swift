@@ -1,5 +1,5 @@
 //
-//  NetworkSessions.swift
+//  SampleNetworkSessions
 //  GoodNetworking-Sample
 //
 //  Created by Filip Šašala on 17/07/2024.
@@ -13,9 +13,7 @@ extension NetworkSession {
     static var sampleSession: NetworkSession!
 
     static func makeSampleSession() {
-        NetworkSession.sampleSession = NetworkSession(
-            baseUrl: "https://reqres.in/api"
-        )
+        NetworkSession.sampleSession = NetworkSession(baseUrl: "https://reqres.in/api")
     }
 
     static var baseURLProvider: SampleSelectableBaseUrlProvider?
@@ -29,11 +27,11 @@ extension NetworkSession {
         let debugServerCollection = ApiServerCollection(
             name: "Debug Server Collection",
             servers: [devServer, testServer, prodServer],
-            defaultServer: devServer
+            defaultServer: prodServer
         )
         let urlProvider = SampleSelectableBaseUrlProvider(serverCollection: debugServerCollection)
         #else
-        let prodServerCollection = ApiServerCollection(servers: [prodServer], defaultServer: devServer, name: "Debug Server Collection")
+        let prodServerCollection = ApiServerCollection(servers: [prodServer], defaultServer: prodServer, name: "Production Collection")
         let urlProvider = CustomBaseUrlProvider(serverCollection: prodServerCollection)
         #endif
         baseURLProvider = urlProvider
