@@ -125,7 +125,7 @@ public extension NetworkSession {
         }
     }
 
-    func request(endpoint: Endpoint, base: String? = nil) -> DataRequest {
+    @_disfavoredOverload func request(endpoint: Endpoint, base: String? = nil) -> DataRequest {
         let baseUrl = base ?? baseUrl ?? ""
 
         return session.request(
