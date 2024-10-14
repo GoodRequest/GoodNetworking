@@ -54,9 +54,9 @@ final class ArrayEncodingTests: XCTestCase {
     
     var testCancellable: AnyCancellable?
 
-    func testGRSessionPostWithTopArrayJSON() {
+    func testGRSessionPostWithTopArrayJSON() async {
         let session = NetworkSession(baseUrl: Base.base.rawValue, configuration: .default)
-        let request: AnyPublisher<EmptyResponse,AFError> = session.request(endpoint: TestEndpoint.unkeyedTopLevelList(MyStruct.sample))
+        let request: AnyPublisher<EmptyResponse,AFError> = await session.request(endpoint: TestEndpoint.unkeyedTopLevelList(MyStruct.sample))
             .goodify(type: EmptyResponse.self)
         let requestExpectation = expectation(description: "Request Expectation")
 
@@ -72,7 +72,7 @@ final class ArrayEncodingTests: XCTestCase {
                 
             }, receiveValue: { _ in }
             )
-        waitForExpectations(timeout: 5) // Adjust the timeout as needed
+        await fulfillment(of: [requestExpectation], timeout: 5.0, enforceOrder: true)
     }
     
     func testEndpointBuilder() {

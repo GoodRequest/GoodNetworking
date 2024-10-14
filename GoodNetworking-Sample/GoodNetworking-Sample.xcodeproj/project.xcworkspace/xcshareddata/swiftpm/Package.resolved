@@ -1,13 +1,13 @@
 {
-  "originHash" : "43e0fb5cb8c5f65e7230c0cdf54c846dc50f59b56be42aceb814fab01706aea8",
+  "originHash" : "744b0872aef419fd45fd320e4d8845305da5a2d573eb76ecbc676da3e21e99eb",
   "pins" : [
     {
       "identity" : "alamofire",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire.git",
       "state" : {
-        "revision" : "f455c2975872ccd2d9c81594c658af65716e9b9a",
-        "version" : "5.9.1"
+        "revision" : "ea6a94b7dddffd0ca4d0f29252d95310b84dec84",
+        "version" : "5.10.0"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/KittyMac/Sextant.git",
       "state" : {
-        "branch" : "v0.4.31",
-        "revision" : "52a77d0bce0210cf9557faef7fd0adb9a6da02fb"
+        "revision" : "52a77d0bce0210cf9557faef7fd0adb9a6da02fb",
+        "version" : "0.4.31"
       }
     },
     {

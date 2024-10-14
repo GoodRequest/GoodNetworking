@@ -24,7 +24,7 @@ enum TestEndpoint: Endpoint {
     var parameters: EndpointParameters? {
         switch self {
         case .unkeyedTopLevelList(let request):
-            return .parameters(request.objects.map { $0.jsonDict() }.asParameters())
+            return .parameters(request.objects.map { $0.jsonDict() as? [String: any Sendable]}.asParameters())
         }
     }
 
