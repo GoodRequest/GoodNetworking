@@ -70,7 +70,7 @@ public extension DataRequest {
         emptyResponseCodes: Set<Int> = DecodableResponseSerializer<T>.defaultEmptyResponseCodes,
         emptyResponseMethods: Set<HTTPMethod> = DecodableResponseSerializer<T>.defaultEmptyRequestMethods,
         decoder: JSONDecoder = (T.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
-    ) -> AnyPublisher<T, AFError> {
+    ) -> AnyPublisher<T, AFError> where T: Sendable {
         let serializer = DecodableResponseSerializer<T>(
             dataPreprocessor: preprocessor,
             decoder: decoder,
@@ -138,7 +138,7 @@ public extension DataRequest {
         emptyResponseCodes: Set<Int> = DecodableResponseSerializer<T>.defaultEmptyResponseCodes,
         emptyResponseMethods: Set<HTTPMethod> = DecodableResponseSerializer<T>.defaultEmptyRequestMethods,
         decoder: JSONDecoder = (T.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
-    ) -> AnyPublisher<[T], AFError> {
+    ) -> AnyPublisher<[T], AFError> where T: Sendable {
         let serializer = DecodableResponseSerializer<[T]>(
             dataPreprocessor: preprocessor,
             decoder: decoder,

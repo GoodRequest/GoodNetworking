@@ -1,13 +1,58 @@
 {
-  "originHash" : "0b8591faa4c66befdc064d16a29b21139127caaac8c0672c1bc7e50dc00918c2",
+  "originHash" : "543537f7cf4d96c92cf9f09a6b44475d1cf6e408b1cb4931c3c607a4ea0882ca",
   "pins" : [
     {
       "identity" : "alamofire",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire.git",
       "state" : {
-        "branch" : "swift6",
-        "revision" : "19fe88bbdb76dd0eb1cf912bfb5f5bffdee2eee1"
+        "revision" : "ea6a94b7dddffd0ca4d0f29252d95310b84dec84",
+        "version" : "5.10.0"
+      }
+    },
+    {
+      "identity" : "alamofireimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Alamofire/AlamofireImage.git",
+      "state" : {
+        "revision" : "1eaf3b6c6882bed10f6e7b119665599dd2329aa1",
+        "version" : "4.3.0"
+      }
+    },
+    {
+      "identity" : "chronometer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Chronometer.git",
+      "state" : {
+        "revision" : "d21b89e5cb5929b5175bdb3ad710a52cbf497eaa",
+        "version" : "0.1.12"
+      }
+    },
+    {
+      "identity" : "hitch",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Hitch.git",
+      "state" : {
+        "revision" : "d6c147a1d70992db39a141cb5bf9cf8fbb776250",
+        "version" : "0.4.148"
+      }
+    },
+    {
+      "identity" : "sextant",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Sextant.git",
+      "state" : {
+        "revision" : "52a77d0bce0210cf9557faef7fd0adb9a6da02fb",
+        "version" : "0.4.31"
+      }
+    },
+    {
+      "identity" : "spanker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/KittyMac/Spanker.git",
+      "state" : {
+        "revision" : "d4b439bf76a40fb45d86a24d13b9c26e7d630eee",
+        "version" : "0.2.49"
       }
     }
   ],
