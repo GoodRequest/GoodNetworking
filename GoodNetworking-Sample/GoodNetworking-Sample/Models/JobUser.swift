@@ -5,7 +5,6 @@
 //  Created by Filip Šašala on 19/07/2024.
 //
 
-import Foundation
 import GoodNetworking
 
 // MARK: - Model + remote

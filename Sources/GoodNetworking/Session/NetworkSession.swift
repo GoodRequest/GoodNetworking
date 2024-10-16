@@ -8,61 +8,71 @@
 @preconcurrency import Alamofire
 import Foundation
 
-/// Network session that is resolved asynchronously when required and cached for subsequent usages
-public actor FutureSession {
-
-    public typealias FutureSessionSupplier = (@Sendable () async -> NetworkSession)
-
-    private var supplier: FutureSessionSupplier
-    private var sessionCache: NetworkSession?
-
-    public var cachedSession: NetworkSession {
-        get async {
-            let session = sessionCache
-            if let session {
-                return session
-            } else {
-                sessionCache = await supplier()
-                return sessionCache!
-            }
-        }
-    }
-
-    public init(_ supplier: @escaping FutureSessionSupplier) {
-        self.supplier = supplier
-    }
-
-    public func callAsFunction() async -> NetworkSession {
-        return await cachedSession
-    }
-
-}
-
-internal extension FutureSession {
-
-    static let placeholder: FutureSession = FutureSession {
-        preconditionFailure("No session supplied. Use Resource.session(:) to provide a valid network session.")
-    }
-
-}
-
 /// Executes network requests for the client app.
-public actor NetworkSession {
+///
+/// `NetworkSession` is responsible for sending, downloading, and uploading data through a network session.
+/// It uses a base URL provider and a session provider to manage the configuration and ensure the session's validity.
+public actor NetworkSession: Hashable {
 
-    // MARK: - Variables
+    public static func == (lhs: NetworkSession, rhs: NetworkSession) -> Bool {
+        lhs.sessionId == rhs.sessionId
+    }
 
-    public let configuration: NetworkSessionProviding
-    public let baseUrl: BaseUrlProviding?
+    nonisolated public func hash(into hasher: inout Hasher) {
+        hasher.combine(sessionId)
+    }
+
+    // MARK: - ID
+
+    nonisolated private let sessionId: UUID = UUID()
+
+    // MARK: - Properties
+
+    /// The provider responsible for managing the network session, ensuring it is created, resolved, and validated.
+    public let sessionProvider: NetworkSessionProviding
+
+    /// The optional provider for resolving the base URL to be used in network requests.
+    public let baseUrlProvider: BaseUrlProviding?
 
     // MARK: - Initialization
 
-    /// A public initializer that sets the baseURL and configuration properties, and initializes the underlying `Session` object.
+    /// Initializes the `NetworkSession` with an optional base URL provider and a session provider.
+    ///
+    /// - Parameters:
+    ///   - baseUrlProvider: An optional provider for the base URL. Defaults to `nil`.
+    ///   - sessionProvider: The session provider to be used. Defaults to `DefaultSessionProvider` with a default configuration.
+    public init(
+        baseUrlProvider: BaseUrlProviding? = nil,
+        sessionProvider: NetworkSessionProviding = DefaultSessionProvider(configuration: .default)
+    ) {
+        self.baseUrlProvider = baseUrlProvider
+        self.sessionProvider = sessionProvider
+    }
+
+    /// Initializes the `NetworkSession` with an optional base URL provider and a network session configuration.
+    ///
+    /// - Parameters:
+    ///   - baseUrl: An optional provider for the base URL. Defaults to `nil`.
+    ///   - configuration: The configuration to be used for creating the session. Defaults to `.default`.
     public init(
         baseUrl: BaseUrlProviding? = nil,
-        configuration: NetworkSessionProviding = DefaultSessionProvider(configuration: .default)
+        configuration: NetworkSessionConfiguration = .default
     ) {
-        self.baseUrl = baseUrl
-        self.configuration = configuration
+        self.baseUrlProvider = baseUrl
+        self.sessionProvider = DefaultSessionProvider(configuration: configuration)
+    }
+
+    /// Initializes the `NetworkSession` with an optional base URL provider and an existing session.
+    ///
+    /// - Parameters:
+    ///   - baseUrlProvider: An optional provider for the base URL. Defaults to `nil`.
+    ///   - session: An existing session to be used by this provider.
+    public init(
+        baseUrlProvider: BaseUrlProviding? = nil,
+        session: Alamofire.Session
+    ) {
+        self.baseUrlProvider = baseUrlProvider
+        self.sessionProvider = DefaultSessionProvider(session: session)
     }
 
 }
@@ -71,16 +81,23 @@ public actor NetworkSession {
 
 public extension NetworkSession {
 
-    /// Send request to an endpoint on a given base URL.
+    /// Sends a network request to an endpoint using the resolved base URL and session.
+    ///
     /// - Parameters:
-    ///   - endpoint: Endpoint instance representing the endpoint
-    ///   - base: Base address to use when building the endpoint URL. Optional, if not provided, the default `baseUrl`
-    ///   property will be used.
-    func request<Result: Decodable & Sendable>(endpoint: Endpoint, baseUrl: BaseUrlProviding? = nil) async throws(NetworkError) -> Result {
-        let resolvedBaseUrl = try await resolveBaseUrl(baseUrl: baseUrl)
-        let resolvedSession = await resolveSession(sessionProvider: configuration)
-        
-        do {
+    ///   - endpoint: The endpoint instance representing the URL, method, parameters, and headers.
+    ///   - baseUrlProvider: An optional base URL provider. If `nil`, the default `baseUrlProvider` is used.
+    ///   - validationProvider: The validation provider used to validate the response. Defaults to `DefaultValidationProvider`.
+    /// - Returns: The decoded result of type `Result`.
+    /// - Throws: A `Failure` error if validation or the request fails.
+    func request<Result: Decodable & Sendable, Failure: Error>(
+        endpoint: Endpoint,
+        baseUrlProvider: BaseUrlProviding? = nil,
+        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
+    ) async throws(Failure) -> Result {
+        return try await catchingFailure(validationProvider: validationProvider) {
+            let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+            let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
+
             return try await resolvedSession.request(
                 try? endpoint.url(on: resolvedBaseUrl),
                 method: endpoint.method,
@@ -88,20 +105,28 @@ public extension NetworkSession {
                 encoding: endpoint.encoding,
                 headers: endpoint.headers
             )
-            .goodify(type: Result.self)
+            .goodify(type: Result.self, validator: validationProvider)
             .value
-        } catch let error as AFError {
-            throw .alamofire(error)
-        } catch {
-            throw .session
         }
     }
 
-    func requestRaw(endpoint: Endpoint, baseUrl: String? = nil) async throws(NetworkError) -> Data {
-        let resolvedBaseUrl = try await resolveBaseUrl(baseUrl: baseUrl)
-        let resolvedSession = await resolveSession(sessionProvider: configuration)
+    /// Sends a raw network request and returns the response data.
+    ///
+    /// - Parameters:
+    ///   - endpoint: The endpoint instance representing the URL, method, parameters, and headers.
+    ///   - baseUrlProvider: An optional base URL provider. If `nil`, the default `baseUrlProvider` is used.
+    ///   - validationProvider: The validation provider used to validate the response. Defaults to `DefaultValidationProvider`.
+    /// - Returns: The raw response data.
+    /// - Throws: A `Failure` error if validation or the request fails.
+    func requestRaw<Failure: Error>(
+        endpoint: Endpoint,
+        baseUrlProvider: BaseUrlProviding? = nil,
+        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
+    ) async throws(Failure) -> Data {
+        return try await catchingFailure(validationProvider: validationProvider) {
+            let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+            let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
-        do {
             return try await resolvedSession.request(
                 try? endpoint.url(on: resolvedBaseUrl),
                 method: endpoint.method,
@@ -111,40 +136,26 @@ public extension NetworkSession {
             )
             .serializingData()
             .value
-        } catch let error as AFError {
-            throw .alamofire(error)
-        } catch {
-            throw .session
         }
     }
 
-    @_disfavoredOverload func request(endpoint: Endpoint, base: String? = nil) async throws(NetworkError) -> DataRequest {
-        let resolvedBaseUrl = try await resolveBaseUrl(baseUrl: baseUrl)
-        let resolvedSession = await resolveSession(sessionProvider: configuration)
+    /// Sends a request and returns an unprocessed `DataRequest` object.
+    ///
+    /// - Parameters:
+    ///   - endpoint: The endpoint instance representing the URL, method, parameters, and headers.
+    ///   - baseUrlProvider: An optional base URL provider. If `nil`, the default `baseUrlProvider` is used.
+    /// - Returns: A `DataRequest` object representing the raw request.
+    @_disfavoredOverload func request(endpoint: Endpoint, baseUrlProvider: BaseUrlProviding? = nil) async -> DataRequest {
+        let resolvedBaseUrl = try? await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+        let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
         return resolvedSession.request(
-            try? endpoint.url(on: resolvedBaseUrl),
+            try? endpoint.url(on: resolvedBaseUrl ?? ""),
             method: endpoint.method,
             parameters: endpoint.parameters?.dictionary,
             encoding: endpoint.encoding,
             headers: endpoint.headers
         )
-    }
-
-    private func resolveSession(sessionProvider: NetworkSessionProviding) async -> Alamofire.Session {
-        if await sessionProvider.shouldResolveNew() {
-            await sessionProvider.resolveSession()
-        } else {
-            await sessionProvider.cachedSession()
-        }
-    }
-
-    private func resolveBaseUrl(baseUrl: BaseUrlProviding?) async throws(NetworkError) -> String {
-        let baseUrlProvider = baseUrl ?? self.baseUrl
-        guard let resolvedBaseUrl = await baseUrlProvider?.resolveBaseUrl() else {
-            throw .session
-        }
-        return resolvedBaseUrl
     }
 
 }
@@ -153,16 +164,17 @@ public extension NetworkSession {
 
 public extension NetworkSession {
 
-    /// Creates a download request for the given `endpoint`.
+    /// Creates a download request for the given `endpoint` and saves the result to the specified file.
     ///
     /// - Parameters:
-    ///   - endpoint: The endpoint to make the request to.
-    ///   - base: The base URL to use for the request. Defaults to nil.
-    ///   - customFileName: The custom file name for the downloaded file.
-    /// - Returns: A download request for the given endpoint.
-    func download(endpoint: Endpoint, base: String? = nil, customFileName: String) async throws(NetworkError) -> DownloadRequest {
-        let resolvedBaseUrl = try await resolveBaseUrl(baseUrl: baseUrl)
-        let resolvedSession = await resolveSession(sessionProvider: configuration)
+    ///   - endpoint: The endpoint instance representing the URL, method, parameters, and headers.
+    ///   - baseUrlProvider: An optional base URL provider. Defaults to `nil`.
+    ///   - customFileName: The name of the file to which the downloaded content will be saved.
+    /// - Returns: A `DownloadRequest` for the file download.
+    /// - Throws: A `NetworkError` if the request fails.
+    func download(endpoint: Endpoint, baseUrlProvider: BaseUrlProviding? = nil, customFileName: String) async throws(NetworkError) -> DownloadRequest {
+        let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+        let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
         let destination: DownloadRequest.Destination = { temporaryURL, _ in
             let directoryURLs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
@@ -187,25 +199,27 @@ public extension NetworkSession {
 
 public extension NetworkSession {
 
-    /// Uploads data to endpoint.
+    /// Uploads data to the specified `endpoint` using multipart form data.
     ///
     /// - Parameters:
-    ///   - endpoint: The endpoint manager object to specify the endpoint URL and other related information.
+    ///   - endpoint: The endpoint instance representing the URL, method, parameters, and headers.
     ///   - data: The data to be uploaded.
-    ///   - fileHeader: The header to be used for the uploaded data in the form data. Defaults to "file".
+    ///   - fileHeader: The header to use for the uploaded file in the form data. Defaults to "file".
     ///   - filename: The name of the file to be uploaded.
-    ///   - mimeType: The MIME type of the data to be uploaded.
-    /// - Returns: The upload request object.
+    ///   - mimeType: The MIME type of the file.
+    ///   - baseUrlProvider: An optional base URL provider. Defaults to `nil`.
+    /// - Returns: An `UploadRequest` representing the upload.
+    /// - Throws: A `NetworkError` if the upload fails.
     func uploadWithMultipart(
         endpoint: Endpoint,
         data: Data,
         fileHeader: String = "file",
         filename: String,
         mimeType: String,
-        base: String? = nil
+        baseUrlProvider: BaseUrlProviding? = nil
     ) async throws(NetworkError) -> UploadRequest {
-        let resolvedBaseUrl = try await resolveBaseUrl(baseUrl: baseUrl)
-        let resolvedSession = await resolveSession(sessionProvider: configuration)
+        let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+        let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
         return resolvedSession.upload(
             multipartFormData: { formData in
@@ -217,35 +231,21 @@ public extension NetworkSession {
         )
     }
 
-    /// Uploads multipart form data to endpoint.
+    /// Uploads multipart form data to the specified `endpoint`.
     ///
     /// - Parameters:
-    ///  - endpoint: The endpoint manager object to specify the endpoint URL and other related information.
-    ///  - multipartFormData: The multipart form data to be uploaded.
-    ///  - base: The base URL to use for the request. Defaults to nil.
-    /// - Returns: The upload request object.
-    /// ## Example
-    /// ```swift
-    /// let fileURL = URL(filePath: "path/to/file")
-    /// let multipartFormData = MultipartFormData()
-    /// multipartFormData.append(fileURL, withName: "file")
-    ///
-    /// let image = UIImage(named: "image")
-    /// let imageData = image?.jpegData(compressionQuality: 0.5)
-    /// multipartFormData.append(imageData!, withName: "image", fileName: "image.jpg", mimeType: "image/jpeg")
-    ///
-    /// let request = session.uploadWithMultipart(endpoint: endpoint, multipartFormData: multipartFormData)
-    /// ```
+    ///   - endpoint: The endpoint instance representing the URL, method, parameters, and headers.
+    ///   - multipartFormData: The multipart form data to upload.
+    ///   - baseUrlProvider: An optional base URL provider. Defaults to `nil`.
+    /// - Returns: An `UploadRequest` representing the upload.
+    /// - Throws: A `NetworkError` if the upload fails.
     func uploadWithMultipart(
         endpoint: Endpoint,
         multipartFormData: MultipartFormData,
-        base: String? = nil
+        baseUrlProvider: BaseUrlProviding? = nil
     ) async throws(NetworkError) -> UploadRequest {
-        let baseUrlProvider = baseUrl ?? self.baseUrl
-        guard let resolvedBaseUrl = await baseUrlProvider?.resolveBaseUrl() else {
-            throw .session
-        }
-        let resolvedSession = await resolveSession(sessionProvider: configuration)
+        let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+        let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
         return resolvedSession.upload(
             multipartFormData: multipartFormData,
@@ -257,70 +257,60 @@ public extension NetworkSession {
 
 }
 
-// MARK: - Error
+// MARK: - Internal
 
-public enum NetworkError: Error, Hashable {
+extension NetworkSession {
 
-    case endpoint(EndpointError)
-    case alamofire(AFError)
-    case paging(PagingError)
-    case missingLocalData
-    case missingRemoteData
-    case session
-
-    var localizedDescription: String {
-        switch self {
-        case .endpoint(let endpointError):
-            return endpointError.localizedDescription
-
-        case .alamofire(let aFError):
-            return aFError.localizedDescription
-
-        case .paging(let pagingError):
-            return pagingError.localizedDescription
-
-        case .missingLocalData:
-            return "Missing data - Failed to map local resource to remote type"
-
-        case .missingRemoteData:
-            return "Missing data - Failed to map remote resource to local type"
-
-        case .session:
-            return "Internal session error"
+    /// Resolves the network session, creating a new one if necessary.
+    ///
+    /// - Parameter sessionProvider: The provider managing the session.
+    /// - Returns: The resolved or newly created `Alamofire.Session`.
+    func resolveSession(sessionProvider: NetworkSessionProviding) async -> Alamofire.Session {
+        if await !sessionProvider.isSessionValid {
+            await sessionProvider.makeSession()
+        } else {
+            await sessionProvider.resolveSession()
         }
     }
 
-}
-
-public enum EndpointError: Error {
-
-    case noSuchEndpoint
-    case operationNotSupported
-
-    var localizedDescription: String {
-        switch self {
-        case .noSuchEndpoint:
-            return "No such endpoint"
-
-        case .operationNotSupported:
-            return "Operation not supported"
+    /// Resolves the base URL using the provided or default base URL provider.
+    ///
+    /// - Parameter baseUrlProvider: An optional base URL provider. If `nil`, the default `baseUrlProvider` is used.
+    /// - Returns: The resolved base URL as a `String`.
+    /// - Throws: A `NetworkError.invalidBaseURL` if the base URL cannot be resolved.
+    func resolveBaseUrl(baseUrlProvider: BaseUrlProviding?) async throws(NetworkError) -> String {
+        let baseUrlProvider = baseUrlProvider ?? self.baseUrlProvider
+        guard let resolvedBaseUrl = await baseUrlProvider?.resolveBaseUrl() else {
+            throw .invalidBaseURL
         }
+        return resolvedBaseUrl
     }
 
-}
-
-public enum PagingError: Error {
-
-    case noMorePages
-    case nonPageableList
-
-    var localizedDescription: String {
-        switch self {
-        case .noMorePages:
-            return "No more pages available"
-
-        case .nonPageableList:
-            return "List is not pageable or paging is not declared"
+    /// Executes a closure while catching and transforming failures.
+    ///
+    /// - Parameters:
+    ///   - validationProvider: The provider used to transform any errors.
+    ///   - body: The closure to execute.
+    /// - Returns: The result of type `Result`.
+    /// - Throws: A transformed error if the closure fails.
+    func catchingFailure<Result: Decodable & Sendable, Failure: Error>(
+        validationProvider: any ValidationProviding<Failure>,
+        body: () async throws -> Result
+    ) async throws(Failure) -> Result {
+        do {
+            return try await body()
+        } catch let networkError as NetworkError {
+            throw validationProvider.transformError(networkError)
+        } catch let error as AFError {
+            if let underlyingError = error.underlyingError as? Failure {
+                throw underlyingError
+            } else if let underlyingError = error.underlyingError as? NetworkError {
+                throw validationProvider.transformError(underlyingError)
+            } else {
+                throw validationProvider.transformError(NetworkError.sessionError)
+            }
+        } catch {
+            throw validationProvider.transformError(NetworkError.sessionError)
         }
     }
 
