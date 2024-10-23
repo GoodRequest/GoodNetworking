@@ -15,10 +15,7 @@ public actor FutureSession {
     /// The type alias for a supplier function that provides a `NetworkSession` asynchronously.
     public typealias FutureSessionSupplier = (@Sendable () async -> NetworkSession)
 
-    /// The supplier function responsible for providing the network session when needed.
     private var supplier: FutureSessionSupplier
-
-    /// The cached instance of the network session, used for subsequent requests after it is first resolved.
     private var sessionCache: NetworkSession?
 
     /// Provides access to the cached network session.
