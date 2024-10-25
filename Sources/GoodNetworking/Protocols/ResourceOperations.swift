@@ -63,11 +63,9 @@ public protocol Creatable: RemoteResource {
     /// - Parameter response: The response received from the creation request.
     /// - Returns: A `Resource` derived from the response.
     /// - Throws: A `NetworkError` if the transformation fails.
-    nonisolated static func resource(from response: CreateResponse) throws(NetworkError) -> Resource
+    nonisolated static func resource(from response: CreateResponse, updating resource: Resource?) throws(NetworkError) -> Resource
 
 }
-
-// MARK: - Default Implementations
 
 public extension Creatable {
 
@@ -103,8 +101,6 @@ public extension Creatable {
 
 }
 
-// MARK: - Default Implementation for When CreateResponse Equals Resource
-
 public extension Creatable where CreateResponse == Resource {
 
     /// Provides a default implementation that directly returns the response as the `Resource`.
@@ -115,7 +111,7 @@ public extension Creatable where CreateResponse == Resource {
     /// - Parameter response: The response received from the creation request.
     /// - Returns: The response as a `Resource`.
     /// - Throws: A `NetworkError` if any transformation fails (not applicable in this case).
-    nonisolated static func resource(from response: CreateResponse) throws(NetworkError) -> Resource {
+    nonisolated static func resource(from response: CreateResponse, updating resource: Resource?) throws(NetworkError) -> Resource {
         response
     }
 
@@ -175,11 +171,9 @@ public protocol Readable: RemoteResource {
     /// - Parameter response: The response received from the read request.
     /// - Returns: A `Resource` derived from the response.
     /// - Throws: A `NetworkError` if the transformation fails.
-    nonisolated static func resource(from response: ReadResponse) throws(NetworkError) -> Resource
+    nonisolated static func resource(from response: ReadResponse, updating resource: Resource?) throws(NetworkError) -> Resource
 
 }
-
-// MARK: - Default Implementations
 
 public extension Readable {
 
@@ -204,8 +198,6 @@ public extension Readable {
 
 }
 
-// MARK: - Default Implementation for Void Request
-
 public extension Readable where ReadRequest == Void {
 
     /// Provides a default implementation that returns an empty `Void` request.
@@ -220,8 +212,6 @@ public extension Readable where ReadRequest == Void {
 
 }
 
-// MARK: - Default Implementation for When ReadResponse Equals Resource
-
 public extension Readable where ReadResponse == Resource {
 
     /// Provides a default implementation that directly returns the response as the `Resource`.
@@ -232,13 +222,13 @@ public extension Readable where ReadResponse == Resource {
     /// - Parameter response: The response received from the read request.
     /// - Returns: The response as a `Resource`.
     /// - Throws: A `NetworkError` if any transformation fails (not applicable in this case).
-    nonisolated static func resource(from response: ReadResponse) throws(NetworkError) -> Resource {
+    nonisolated static func resource(from response: ReadResponse, updating resource: Resource?) throws(NetworkError) -> Resource {
         response
     }
 
 }
 
-// MARK: - Readable - Query
+// MARK: - Query
 
 /// Represents a resource that can be read as a query response from a remote server.
 ///
@@ -255,8 +245,6 @@ public protocol Query: Readable where ReadResponse == Data {
 
 }
 
-// MARK: - Default Implementation for Query with Decodable Resource
-
 public extension Query where Resource: Decodable {
 
     /// Provides a default implementation for parsing the raw response data into a `Resource` using the query.
@@ -266,13 +254,11 @@ public extension Query where Resource: Decodable {
     /// - Parameter response: The raw response data received from the server.
     /// - Returns: The decoded `Resource` object.
     /// - Throws: A `NetworkError` if the parsing or decoding fails.
-    nonisolated static func resource(from response: ReadResponse) throws(NetworkError) -> Resource {
+    nonisolated static func resource(from response: ReadResponse, updating resource: Resource?) throws(NetworkError) -> Resource {
         Sextant.shared.query(response, values: Hitch(string: query())) ?? .placeholder
     }
 
 }
-
-// MARK: - Default Implementation for Query Read Method
 
 public extension Query {
 
@@ -343,18 +329,9 @@ public protocol Updatable: Readable {
     /// - Throws: A `NetworkError` if the transformation fails.
     nonisolated static func request(from resource: Resource?) throws(NetworkError) -> UpdateRequest?
 
-    /// Transforms the update response into a `Resource`.
-    ///
-    /// This method is used to convert the response data from the update request into a usable `Resource`.
-    ///
-    /// - Parameter response: The response received from the update request.
-    /// - Returns: A `Resource` derived from the response.
-    /// - Throws: A `NetworkError` if the transformation fails.
-    nonisolated static func resource(from response: UpdateResponse) throws(NetworkError) -> Resource
+    nonisolated static func resource(from response: UpdateResponse, updating resource: Resource?) throws(NetworkError) -> Resource
 
 }
-
-// MARK: - Default Implementations for Updatable
 
 public extension Updatable {
 
@@ -379,8 +356,6 @@ public extension Updatable {
 
 }
 
-// MARK: - Default Implementation for When UpdateResponse Equals Resource
-
 public extension Updatable where UpdateResponse == Resource {
 
     /// Provides a default implementation that directly returns the response as the `Resource`.
@@ -391,7 +366,7 @@ public extension Updatable where UpdateResponse == Resource {
     /// - Parameter response: The response received from the update request.
     /// - Returns: The response as a `Resource`.
     /// - Throws: A `NetworkError` if any transformation fails (not applicable in this case).
-    nonisolated static func resource(from response: UpdateResponse) throws(NetworkError) -> Resource {
+    nonisolated static func resource(from response: UpdateResponse, updating resource: Resource?) throws(NetworkError) -> Resource {
         response
     }
 
@@ -452,11 +427,9 @@ public protocol Deletable: Readable {
     /// - Parameter response: The response received from the delete request.
     /// - Returns: A `Resource` derived from the response.
     /// - Throws: A `NetworkError` if the transformation fails.
-    nonisolated static func resource(from response: DeleteResponse) throws(NetworkError) -> Resource
+    nonisolated static func resource(from response: DeleteResponse, updating resource: Resource?) throws(NetworkError) -> Resource?
 
 }
-
-// MARK: - Default Implementations for Deletable
 
 public extension Deletable {
 
@@ -543,6 +516,7 @@ public protocol Listable: RemoteResource {
     ///
     /// - Returns: The `ListRequest` representing the first page request.
     nonisolated static func firstPageRequest() -> ListRequest
+    #warning("add nil implementation when first page request is supplied manually from viewmodel")
 
     /// Provides the next page request based on the current resources and the last response.
     ///

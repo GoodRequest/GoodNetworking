@@ -168,7 +168,7 @@ extension Resource where R: Creatable {
             )
             self.rawResponse.create = response
 
-            let resource = try R.resource(from: response)
+            let resource = try R.resource(from: response, updating: resource)
 
             self.state = .available(resource)
             self.listState = .available([resource])
@@ -219,7 +219,7 @@ extension Resource where R: Readable {
             )
             self.rawResponse.read = response
 
-            let resource = try R.resource(from: response)
+            let resource = try R.resource(from: response, updating: resource)
 
             self.state = .available(resource)
             self.listState = .available([resource])
@@ -267,7 +267,7 @@ extension Resource where R: Updatable {
             )
             self.rawResponse.update = response
 
-            let resource = try R.resource(from: response)
+            let resource = try R.resource(from: response, updating: resource)
 
             self.state = .available(resource)
             self.listState = .available([resource])
@@ -309,8 +309,16 @@ extension Resource where R: Deletable {
             )
             self.rawResponse.delete = response
 
-            self.state = .idle
-            self.listState = .idle
+            let resource = try R.resource(from: response, updating: state.value)
+            if let resource {
+                // case with partial/soft delete only
+                self.state = .available(resource)
+                self.listState = .available([resource])
+            } else {
+                self.state = .idle
+                #warning("TODO: vymazat z listu iba prave vymazovany element")
+                self.listState = .idle
+            }
         } catch let error {
             self.state = .failure(error)
             self.listState = .failure(error)
