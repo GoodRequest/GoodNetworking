@@ -397,12 +397,6 @@ public extension Updatable where UpdateResponse == Resource {
 
 }
 
-// MARK: - Deletable.swift
-//  GoodNetworking
-//
-//  Created by Andrej Jasso on 15/10/2024.
-//
-
 // MARK: - Deletable
 
 /// Represents a resource that can be deleted from a remote server.
