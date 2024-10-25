@@ -30,7 +30,7 @@ public struct RawResponse: Sendable {
 
     private(set) public var state: ResourceState<R.Resource, NetworkError>
     private var listState: ResourceState<[R.Resource], NetworkError>
-    private var listParameters: EndpointParameters?
+    private var listParameters: Any?
 
     public var value: R.Resource? {
         get {
@@ -353,7 +353,7 @@ extension Resource where R: Listable {
         elements.endIndex
     }
 
-    public func firstPage(parameters: EndpointParameters? = nil, forceReload: Bool = false) async throws {
+    public func firstPage(parameters: Any? = nil, forceReload: Bool = false) async throws {
         if !(listState.value?.isEmpty ?? true) || forceReload {
             self.listState = .idle
             self.state = .loading
