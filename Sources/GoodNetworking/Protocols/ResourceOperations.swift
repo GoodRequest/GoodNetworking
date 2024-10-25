@@ -455,8 +455,6 @@ public extension Deletable {
 
 }
 
-// MARK: - Default Implementation for When DeleteResponse Equals Resource
-
 public extension Deletable where DeleteResponse == Resource {
 
     /// Provides a default implementation that directly returns the response as the `Resource`.
@@ -467,7 +465,7 @@ public extension Deletable where DeleteResponse == Resource {
     /// - Parameter response: The response received from the delete request.
     /// - Returns: The response as a `Resource`.
     /// - Throws: A `NetworkError` if any transformation fails (not applicable in this case).
-    nonisolated static func resource(from response: DeleteResponse) throws(NetworkError) -> Resource {
+    nonisolated static func resource(from response: DeleteResponse, updating resource: Resource?) throws(NetworkError) -> Resource? {
         response
     }
 
@@ -515,18 +513,13 @@ public protocol Listable: RemoteResource {
     /// This method is used to define the initial request for retrieving the first page of resources.
     ///
     /// - Returns: The `ListRequest` representing the first page request.
-    nonisolated static func firstPageRequest() -> ListRequest
-    #warning("add nil implementation when first page request is supplied manually from viewmodel")
+    nonisolated static func firstPageRequest(withParameters: Any?) -> ListRequest
 
-    /// Provides the next page request based on the current resources and the last response.
-    ///
-    /// This method is used to define the request for retrieving the next page of resources.
-    ///
-    /// - Parameters:
-    ///   - currentResource: The current list of resources.
-    ///   - lastResponse: The last response received.
-    /// - Returns: The `ListRequest` representing the next page request, or `nil` if there is no next page.
-    nonisolated static func nextPageRequest(currentResource: [Resource], lastResponse: ListResponse) -> ListRequest?
+    nonisolated static func nextPageRequest(
+        currentResource: [Resource],
+        parameters: Any?,
+        lastResponse: ListResponse
+    ) -> ListRequest?
 
     /// Combines the new response with the existing list of resources.
     ///
@@ -540,8 +533,6 @@ public protocol Listable: RemoteResource {
 
 }
 
-// MARK: - Default Implementations for Listable
-
 public extension Listable {
 
     /// Provides a default implementation for fetching the next page request.
@@ -554,6 +545,7 @@ public extension Listable {
     /// - Returns: `nil` by default, indicating no next page request.
     nonisolated static func nextPageRequest(
         currentResource: [Resource],
+        parameters: Any?,
         lastResponse: ListResponse
     ) -> ListRequest? {
         return nil

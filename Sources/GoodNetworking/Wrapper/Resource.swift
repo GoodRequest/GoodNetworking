@@ -30,6 +30,7 @@ public struct RawResponse: Sendable {
 
     private(set) public var state: ResourceState<R.Resource, NetworkError>
     private var listState: ResourceState<[R.Resource], NetworkError>
+    private var listParameters: EndpointParameters?
 
     public var value: R.Resource? {
         get {
@@ -129,8 +130,10 @@ extension Resource {
         logger.log(level: .error, message: "DELETE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
-    public func firstPage(forceReload: Bool = false) async throws {
+    public func firstPage(parameters: Any? = nil, forceReload: Bool = false) async throws {
         logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger.log(level: .error, message: "Check type of parameters passed to this resource.", privacy: .auto)
+        logger.log(level: .error, message: "Current parameters type: \(type(of: parameters))", privacy: .auto)
     }
 
     public func nextPage() async throws {
@@ -350,13 +353,14 @@ extension Resource where R: Listable {
         elements.endIndex
     }
 
-    public func firstPage(forceReload: Bool = false) async throws {
+    public func firstPage(parameters: EndpointParameters? = nil, forceReload: Bool = false) async throws {
         if !(listState.value?.isEmpty ?? true) || forceReload {
             self.listState = .idle
             self.state = .loading
         }
+        self.listParameters = parameters
 
-        let firstPageRequest = R.firstPageRequest()
+        let firstPageRequest = R.firstPageRequest(withParameters: parameters)
         try await list(request: firstPageRequest)
     }
 
@@ -374,6 +378,7 @@ extension Resource where R: Listable {
 
         return R.nextPageRequest(
             currentResource: currentList,
+            parameters: self.listParameters,
             lastResponse: lastResponse
         )
     }
@@ -404,44 +409,6 @@ extension Resource where R: Listable {
             self.listState = .failure(error)
 
             throw error
-        }
-    }
-
-}
-
-// MARK: - Pager
-
-@available(iOS 17.0, *)
-public struct ResourcePager<R: Listable>: View {
-
-    @State private var isFinished = false
-    private let resource: () -> Resource<R>
-
-    public init(resource: @escaping @autoclosure () -> Resource<R>) {
-        self.resource = resource
-    }
-
-    public var body: some View {
-        Group {
-            if !isFinished {
-                ProgressView()
-            } else {
-                Rectangle().frame(width: 0, height: 0).hidden()
-            }
-        }
-        .onAppear { Task.detached { await getNextPage() }}
-    }
-
-    private func getNextPage() async {
-        if let nextPage = resource().nextPageRequest() {
-            isFinished = false
-            do {
-                try await resource().list(request: nextPage)
-            } catch {
-                isFinished = true
-            }
-        } else {
-            isFinished = true
         }
     }
 
