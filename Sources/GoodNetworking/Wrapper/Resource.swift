@@ -172,10 +172,11 @@ extension Resource where R: Creatable {
             self.rawResponse.create = response
 
             let resource = try R.resource(from: response, updating: resource)
+            try Task.checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
-        } catch let error {
+        } catch let error as NetworkError {
             if let resource {
                 self.state = .stale(resource, error)
                 self.listState = .stale([resource], error)
@@ -184,6 +185,8 @@ extension Resource where R: Creatable {
                 self.listState = .failure(error)
             }
 
+            throw error
+        } catch {
             throw error
         }
     }
@@ -223,10 +226,11 @@ extension Resource where R: Readable {
             self.rawResponse.read = response
 
             let resource = try R.resource(from: response, updating: resource)
+            try Task.checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
-        } catch let error {
+        } catch let error as NetworkError {
             if let resource {
                 self.state = .stale(resource, error)
                 self.listState = .stale([resource], error)
@@ -235,6 +239,8 @@ extension Resource where R: Readable {
                 self.listState = .failure(error)
             }
 
+            throw error
+        } catch {
             throw error
         }
     }
@@ -271,10 +277,11 @@ extension Resource where R: Updatable {
             self.rawResponse.update = response
 
             let resource = try R.resource(from: response, updating: resource)
+            try Task.checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
-        } catch let error {
+        } catch let error as NetworkError {
             if let resource {
                 self.state = .stale(resource, error)
                 self.listState = .stale([resource], error)
@@ -283,6 +290,8 @@ extension Resource where R: Updatable {
                 self.listState = .failure(error)
             }
 
+            throw error
+        } catch {
             throw error
         }
     }
@@ -313,6 +322,8 @@ extension Resource where R: Deletable {
             self.rawResponse.delete = response
 
             let resource = try R.resource(from: response, updating: state.value)
+            try Task.checkCancellation()
+
             if let resource {
                 // case with partial/soft delete only
                 self.state = .available(resource)
@@ -322,10 +333,12 @@ extension Resource where R: Deletable {
                 #warning("TODO: vymazat z listu iba prave vymazovany element")
                 self.listState = .idle
             }
-        } catch let error {
+        } catch let error as NetworkError {
             self.state = .failure(error)
             self.listState = .failure(error)
 
+            throw error
+        } catch {
             throw error
         }
     }
