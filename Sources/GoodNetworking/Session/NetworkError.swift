@@ -16,6 +16,7 @@ public enum NetworkError: Error, Hashable {
     case missingRemoteData
     case sessionError
     case invalidBaseURL
+    case cancelled
 
     var localizedDescription: String {
         switch self {
@@ -39,6 +40,9 @@ public enum NetworkError: Error, Hashable {
 
         case .invalidBaseURL:
             return "Resolved server base URL is invalid"
+
+        case .cancelled:
+            return "Operation cancelled"
         }
     }
 

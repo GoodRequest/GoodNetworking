@@ -172,6 +172,7 @@ extension Resource where R: Creatable {
             self.rawResponse.create = response
 
             let resource = try R.resource(from: response, updating: resource)
+            try checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
@@ -223,6 +224,7 @@ extension Resource where R: Readable {
             self.rawResponse.read = response
 
             let resource = try R.resource(from: response, updating: resource)
+            try checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
@@ -271,6 +273,7 @@ extension Resource where R: Updatable {
             self.rawResponse.update = response
 
             let resource = try R.resource(from: response, updating: resource)
+            try checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
@@ -313,6 +316,8 @@ extension Resource where R: Deletable {
             self.rawResponse.delete = response
 
             let resource = try R.resource(from: response, updating: state.value)
+            try checkCancellation()
+
             if let resource {
                 // case with partial/soft delete only
                 self.state = .available(resource)
@@ -409,6 +414,21 @@ extension Resource where R: Listable {
             self.listState = .failure(error)
 
             throw error
+        }
+    }
+
+}
+
+// MARK: - Cancellation handling
+
+@available(iOS 17.0, *)
+extension Resource {
+
+    func checkCancellation() throws(NetworkError) {
+        do {
+            try Task.checkCancellation()
+        } catch {
+            throw NetworkError.cancelled
         }
     }
 
