@@ -18,7 +18,7 @@ public enum NetworkError: LocalizedError, Hashable {
     case invalidBaseURL
     case cancelled
 
-    public var errorDescription: String? {
+    public var errorDescription: String {
         switch self {
         case .endpoint(let endpointError):
             return endpointError.errorDescription
