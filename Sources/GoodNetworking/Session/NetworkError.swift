@@ -18,7 +18,7 @@ public enum NetworkError: LocalizedError, Hashable {
     case invalidBaseURL
     case cancelled
 
-    public var errorDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .endpoint(let endpointError):
             return endpointError.errorDescription
@@ -69,7 +69,7 @@ public enum EndpointError: LocalizedError {
     case noSuchEndpoint
     case operationNotSupported
 
-    public var errorDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .noSuchEndpoint:
             return "No such endpoint"
@@ -86,7 +86,7 @@ public enum PagingError: LocalizedError {
     case noMorePages
     case nonPageableList
 
-    var errorDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .noMorePages:
             return "No more pages available"
