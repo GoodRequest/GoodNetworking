@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GoodRequest/GoodLogger.git",
       "state" : {
-        "revision" : "8203802fcff9163a309bd5edd44cc6f649404050",
-        "version" : "1.2.4"
+        "revision" : "14318cd3a38a08ac49e2b1dee56386904fedecc5",
+        "version" : "1.3.0"
       }
     },
     {

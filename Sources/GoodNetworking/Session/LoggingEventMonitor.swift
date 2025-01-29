@@ -16,6 +16,7 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
     nonisolated(unsafe) public static var prettyPrinted: Bool = true
     nonisolated(unsafe) public static var maxVerboseLogSizeBytes: Int = 100_000
 
+    /// The `DispatchQueue` onto which Alamofire's root `CompositeEventMonitor` will dispatch events. `.main` by default.
     public let queue = DispatchQueue(label: C.queueLabel, qos: .background)
 
     private enum C {
@@ -56,9 +57,9 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
 
         switch response.result {
         case .success:
-            logger?.log(level: .debug, message: logMessage, privacy: .auto)
+            logger?.log(message: logMessage, level: .debug)
         case .failure:
-            logger?.log(level: .fault, message: logMessage, privacy: .auto)
+            logger?.log(message: logMessage, level: .fault)
         }
     }
 

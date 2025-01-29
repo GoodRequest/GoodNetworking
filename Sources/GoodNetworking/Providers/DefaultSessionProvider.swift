@@ -74,9 +74,8 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     /// - Returns: `true`, indicating the session is valid.
     public var isSessionValid: Bool {
         logger.log(
-            level: .debug,
             message: "✅ Default session is always valid",
-            privacy: .auto
+            level: .debug
         )
         return true
     }
@@ -86,9 +85,8 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     /// Since the default session does not support invalidation, this method simply logs a message without performing any action.
     public func invalidateSession() async {
         logger.log(
-            level: .debug,
             message: "❌ Default session cannot be invalidated",
-            privacy: .auto
+            level: .debug
         )
     }
 
@@ -100,9 +98,8 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     /// - Returns: A new instance of `Alamofire.Session`.
     public func makeSession() async -> Alamofire.Session {
         logger.log(
-            level: .debug,
             message: "❌ Default Session Provider cannot be create a new Session, it's setup in the initializer",
-            privacy: .auto
+            level: .debug
         )
 
         return currentSession
@@ -116,9 +113,8 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     /// - Returns: The current or newly created `Alamofire.Session`.
     public func resolveSession() async -> Alamofire.Session {
         logger.log(
-            level: .debug,
             message: "❌ Default session provider always resolves current session which is setup in the initializer",
-            privacy: .auto
+            level: .debug
         )
         return currentSession
     }
