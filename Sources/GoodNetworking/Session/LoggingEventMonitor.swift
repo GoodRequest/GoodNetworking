@@ -41,10 +41,27 @@ import Foundation
 
 public struct LoggingEventMonitor: EventMonitor, Sendable {
 
-    nonisolated(unsafe) private static var configuration = Configuration()
+    public let configuration: Configuration
 
     /// Configuration options for the logging monitor.
-    public struct Configuration {
+    public struct Configuration: Sendable {
+
+        public init(
+            verbose: Bool = true,
+            prettyPrinted: Bool = true,
+            maxVerboseLogSizeBytes: Int = 100_000,
+            slowRequestThreshold: TimeInterval = 1.0,
+            prefixes: Prefixes = Prefixes(),
+            mimeTypeWhilelistConfiguration: MimeTypeWhitelistConfiguration? = nil
+        ) {
+            self.verbose = verbose
+            self.prettyPrinted = prettyPrinted
+            self.maxVerboseLogSizeBytes = maxVerboseLogSizeBytes
+            self.slowRequestThreshold = slowRequestThreshold
+            self.prefixes = prefixes
+            self.mimeTypeWhilelistConfiguration = mimeTypeWhilelistConfiguration
+        }
+
         /// Whether to log detailed request/response information. Defaults to `true`.
         var verbose: Bool = true
         
@@ -59,12 +76,52 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
         
         /// Emoji prefixes used in log messages.
         var prefixes = Prefixes()
-        
-        /// Whether to only log responses with whitelisted MIME types. Defaults to `true`.
-        var useMimeTypeWhitelist: Bool = true
+
+        public struct MimeTypeWhitelistConfiguration : Sendable {
+
+            public init(responseTypeWhiteList: [String]? = nil) {
+                self.responseTypeWhiteList = responseTypeWhiteList ?? [
+                    "application/json",
+                    "application/ld+json",
+                    "application/xml",
+                    "text/plain",
+                    "text/csv",
+                    "text/html",
+                    "text/javascript",
+                    "application/rtf"
+                ]
+            }
+
+            var responseTypeWhiteList: [String]
+
+        }
+
+        var mimeTypeWhilelistConfiguration: MimeTypeWhitelistConfiguration?
+
+        /// List of MIME types that will be logged when `useMimeTypeWhitelist` is enabled.
+
 
         /// Emoji prefixes used to categorize different types of log messages.
-        public struct Prefixes {
+        public struct Prefixes: Sendable {
+
+            public init(
+                request: String = "🚀",
+                response: String = "⬇️",
+                error: String = "🚨",
+                headers: String = "🏷",
+                metrics: String = "⌛️",
+                success: String = "✅",
+                failure: String = "❌"
+            ) {
+                self.request = request
+                self.response = response
+                self.error = error
+                self.headers = headers
+                self.metrics = metrics
+                self.success = success
+                self.failure = failure
+            }
+
             var request = "🚀"
             var response = "⬇️" 
             var error = "🚨"
@@ -73,15 +130,6 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
             var success = "✅"
             var failure = "❌"
         }
-    }
-
-    /// Updates the monitor's configuration.
-    ///
-    /// - Parameter updates: A closure that modifies the configuration.
-    public static func configure(_ updates: (inout Configuration) -> Void) {
-        var config = configuration
-        updates(&config)
-        configuration = config
     }
 
     /// The queue on which logging events are dispatched.
@@ -96,8 +144,9 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
     /// Creates a new logging monitor.
     ///
     /// - Parameter logger: The logger instance to use for output. If nil, no logging occurs.
-    public init(logger: (any GoodLogger)?) {
+    public init(logger: (any GoodLogger)?, configuration: Configuration = .init()) {
         self.logger = logger
+        self.configuration = configuration
     }
 
     public func request<T>(_ request: DataRequest, didParseResponse response: DataResponse<T, AFError>) {
@@ -109,22 +158,23 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
         let requestBodyMessage = parse(
             data: request.request?.httpBody,
             error: response.error as NSError?,
-            prefix: "\(Self.configuration.prefixes.request) Request body (\(formatBytes(requestSize))):"
+            prefix: "\(configuration.prefixes.request) Request body (\(formatBytes(requestSize))):"
         )
         let errorMessage: String? = if let afError = response.error {
-            "\(Self.configuration.prefixes.error) Error:\n\(afError)"
+            "\(configuration.prefixes.error) Error:\n\(afError)"
         } else {
             nil
         }
 
         let responseBodyMessage = if
-            Self.configuration.useMimeTypeWhitelist,
-            Self.responseTypeWhiteList.contains(where: { $0 == response.response?.mimeType })
+            let mimeTypeWhilelistConfiguration = configuration.mimeTypeWhilelistConfiguration,
+            mimeTypeWhilelistConfiguration.responseTypeWhiteList
+                .contains(where: { $0 == response.response?.mimeType })
         {
             parse(
                 data: response.data,
                 error: response.error as NSError?,
-                prefix: "\(Self.configuration.prefixes.response) Response body (\(formatBytes(responseSize))):"
+                prefix: "\(configuration.prefixes.response) Response body (\(formatBytes(responseSize))):"
             )
         } else {
             "❓❓❓ Response MIME type not whitelisted (\(response.response?.mimeType ?? "❓"))"
@@ -158,42 +208,42 @@ private extension LoggingEventMonitor {
         else {
             return nil
         }
-        guard Self.configuration.verbose else {
-            return "\(Self.configuration.prefixes.request) \(method)|\(parseResponseStatus(response: response))|\(url)"
+        guard configuration.verbose else {
+            return "\(configuration.prefixes.request) \(method)|\(parseResponseStatus(response: response))|\(url)"
         }
 
         if let headers = request.allHTTPHeaderFields,
            !headers.isEmpty,
            let headersData = try? JSONSerialization.data(withJSONObject: headers, options: [.prettyPrinted]),
-           let headersPrettyMessage = parse(data: headersData, error: nil, prefix: "\(Self.configuration.prefixes.headers) Headers:") {
+           let headersPrettyMessage = parse(data: headersData, error: nil, prefix: "\(configuration.prefixes.headers) Headers:") {
 
-            return "\(Self.configuration.prefixes.request) \(method)|\(parseResponseStatus(response: response))|\(url)\n" + headersPrettyMessage
+            return "\(configuration.prefixes.request) \(method)|\(parseResponseStatus(response: response))|\(url)\n" + headersPrettyMessage
         } else {
             let headers = if let allHTTPHeaderFields = request.allHTTPHeaderFields, !allHTTPHeaderFields.isEmpty {
                 allHTTPHeaderFields.description
             } else {
                 "empty headers"
             }
-            return "\(Self.configuration.prefixes.request) \(method)|\(parseResponseStatus(response: response))|\(url)\n\(Self.configuration.prefixes.headers) Headers: \(headers)"
+            return "\(configuration.prefixes.request) \(method)|\(parseResponseStatus(response: response))|\(url)\n\(configuration.prefixes.headers) Headers: \(headers)"
         }
     }
 
     func parse(data: Data?, error: NSError?, prefix: String) -> String? {
-        guard Self.configuration.verbose else { return nil }
+        guard configuration.verbose else { return nil }
 
         if let data = data, !data.isEmpty {
-            guard data.count < Self.configuration.maxVerboseLogSizeBytes else {
+            guard data.count < configuration.maxVerboseLogSizeBytes else {
                 return [
                     prefix,
                     "Data size is too big!",
-                    "Max size is: \(Self.configuration.maxVerboseLogSizeBytes) bytes.",
+                    "Max size is: \(configuration.maxVerboseLogSizeBytes) bytes.",
                     "Data size is: \(data.count) bytes",
                     "💡Tip: Change LoggingEventMonitor.maxVerboseLogSizeBytes = \(data.count)"
                 ].joined(separator: "\n")
             }
             if let string = String(data: data, encoding: .utf8) {
                 if let jsonData = try? JSONSerialization.jsonObject(with: data, options: []),
-                   let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonData, options: Self.configuration.prettyPrinted ? [.prettyPrinted, .withoutEscapingSlashes] : [.withoutEscapingSlashes]),
+                   let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonData, options: configuration.prettyPrinted ? [.prettyPrinted, .withoutEscapingSlashes] : [.withoutEscapingSlashes]),
                    let prettyPrintedString = String(data: prettyPrintedData, encoding: .utf8) {
                     return "\(prefix) \n\(prettyPrintedString)"
                 } else {
@@ -206,16 +256,16 @@ private extension LoggingEventMonitor {
     }
 
     func parse(metrics: URLSessionTaskMetrics?) -> String? {
-        guard let metrics, Self.configuration.verbose else {
+        guard let metrics, configuration.verbose else {
             return nil
         }
 
         let duration = metrics.taskInterval.duration
-        let warning = duration > Self.configuration.slowRequestThreshold ? " ⚠️ Slow Request!" : ""
+        let warning = duration > configuration.slowRequestThreshold ? " ⚠️ Slow Request!" : ""
 
         return [
             "↗️ Start: \(metrics.taskInterval.start)",
-            "\(Self.configuration.prefixes.metrics) Duration: \(String(format: "%.3f", duration))s\(warning)"
+            "\(configuration.prefixes.metrics) Duration: \(String(format: "%.3f", duration))s\(warning)"
         ].joined(separator: "\n")
     }
 
@@ -223,53 +273,19 @@ private extension LoggingEventMonitor {
     func parseResponseStatus(response: HTTPURLResponse) -> String {
         let statusCode = response.statusCode
         let logMessage = (200 ..< 300).contains(statusCode)
-        ? "\(Self.configuration.prefixes.success) \(statusCode)"
-        : "\(Self.configuration.prefixes.failure) \(statusCode)"
+        ? "\(configuration.prefixes.success) \(statusCode)"
+        : "\(configuration.prefixes.failure) \(statusCode)"
 
         return logMessage
     }
 
     private func formatBytes(_ bytes: Int) -> String {
-        let units = ["B", "KB", "MB"]
-        var size = Double(bytes)
-        var unitIndex = 0
-
-        while size > 1024 && unitIndex < units.count - 1 {
-            size /= 1024
-            unitIndex += 1
-        }
-
-        return String(format: "%.1f %@", size, units[unitIndex])
-    }
-
-}
-
-public extension LoggingEventMonitor {
-
-    /// List of MIME types that will be logged when `useMimeTypeWhitelist` is enabled.
-    nonisolated(unsafe) private(set) static var responseTypeWhiteList: [String] = [
-        "application/json",
-        "application/ld+json",
-        "application/xml",
-        "text/plain",
-        "text/csv",
-        "text/html",
-        "text/javascript",
-        "application/rtf"
-    ]
-
-    /// Adds a MIME type to the whitelist for response logging.
-    ///
-    /// - Parameter mimeType: The MIME type to whitelist
-    nonisolated(unsafe) static func logMimeType(_ mimeType: String) {
-        responseTypeWhiteList.append(mimeType)
-    }
-
-    /// Removes a MIME type from the whitelist for response logging.
-    ///
-    /// - Parameter mimeType: The MIME type to remove
-    nonisolated(unsafe) static func stopLoggingMimeType(_ mimeType: String) {
-        responseTypeWhiteList.removeAll{ $0 == mimeType }
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = .binary // Uses 1024 as the base, appropriate for data sizes
+        formatter.allowedUnits = [.useBytes, .useKB, .useMB, .useGB]
+        formatter.includesUnit = true
+        formatter.isAdaptive = true
+        return formatter.string(fromByteCount: Int64(bytes))
     }
 
 }

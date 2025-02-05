@@ -27,7 +27,7 @@ public actor SampleDeduplicatingResultProvider: ResultProviding, Sendable {
     // Sample in-memory cache - not recommended for production use
     private static var cache: [String: (value: Sendable, finishDate: Date)] = [:]
 
-    private let taskID: String
+    private let taskId: String
     private let cacheTimeout: TimeInterval
     private var shouldUpdateOnStore: Bool = false
 
@@ -45,17 +45,17 @@ public actor SampleDeduplicatingResultProvider: ResultProviding, Sendable {
 
     /// Creates a new instance of the sample deduplicating provider
     /// - Parameters:
-    ///   - taskID: A unique identifier for the task
+    ///   - taskId: A unique identifier for the task
     ///   - cacheTimeout: How long cached values remain valid (in seconds)
-    public init(taskID: String, cacheTimeout: TimeInterval = 6) {
-        self.taskID = taskID
+    public init(taskId: String, cacheTimeout: TimeInterval = 6) {
+        self.taskId = taskId
         self.cacheTimeout = cacheTimeout
     }
 
-    /// Generates a unique cache key using the endpoint and taskID.
+    /// Generates a unique cache key using the endpoint and taskId.
     /// This is a simple implementation for demonstration purposes.
     private func cacheKey(for endpoint: Endpoint) -> String {
-        return "\(taskID)_\(endpoint.path)"
+        return "\(taskId)_\(endpoint.path)"
     }
 
     /// Checks if the cached response has expired.

@@ -18,23 +18,24 @@ import GoodLogger
 ///
 /// Example usage:
 /// ```swift
-/// let executor = DeduplicatingRequestExecutor(taskID: "user_profile", cacheTimeout: 300)
+/// let executor = DeduplicatingRequestExecutor(taskId: "user_profile", cacheTimeout: 300)
 /// let result: UserProfile = try await executor.executeRequest(
 ///     endpoint: endpoint,
 ///     session: session,
 ///     baseURL: "https://api.example.com"
 /// )
 /// ```
-public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable {
+public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Identifiable {
 
     /// A unique identifier used to track and deduplicate requests
-    private let taskID: String
-    
+    private let taskId: String
+
+    #warning("Timeout should be configurable based on taskId")
     /// The duration in seconds for which successful responses are cached
     private let cacheTimeout: TimeInterval
-    
+
     /// A dictionary storing currently running or cached request tasks
-    public var runningRequestTasks: [String: ExecutorTask] = [:]
+    public static var runningRequestTasks: [String: ExecutorTask] = [:]
 
     /// A private property that provides the appropriate logger based on the iOS version.
     ///
@@ -44,10 +45,10 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable {
     /// Creates a new deduplicating request executor.
     ///
     /// - Parameters:
-    ///   - taskID: A unique identifier for deduplicating requests
+    ///   - taskId: A unique identifier for deduplicating requests
     ///   - cacheTimeout: The duration in seconds for which successful responses are cached. Defaults to 6 seconds.
     ///                   Set to 0 to disable caching.
-    public init(taskID: String, cacheTimeout: TimeInterval = 6, logger: GoodLogger? = nil) {
+    public init(taskId: String, cacheTimeout: TimeInterval = 6, logger: GoodLogger? = nil) {
         if let logger {
             self.logger = logger
         } else {
@@ -57,7 +58,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable {
                 self.logger = PrintLogger(logMetaData: false)
             }
         }
-        self.taskID = taskID
+        self.taskId = taskId
         self.cacheTimeout = cacheTimeout
     }
 
@@ -82,11 +83,12 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable {
         baseURL: String,
         validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
     ) async throws(Failure) -> Result {
-        runningRequestTasks = runningRequestTasks.filter { !$0.value.exceedsTimeout }
+        DeduplicatingRequestExecutor.runningRequestTasks = DeduplicatingRequestExecutor.runningRequestTasks
+            .filter { !$0.value.exceedsTimeout }
 
         return try await catchingFailure(validationProvider: validationProvider) {
-            if let runningTask = runningRequestTasks[taskID] {
-                logger.log(message: "🚀 taskID: \(taskID) Cached value used", level: .info)
+            if let runningTask = DeduplicatingRequestExecutor.runningRequestTasks[taskId] {
+                logger.log(message: "🚀 taskId: \(taskId) Cached value used", level: .info)
                 let dataResponse = await runningTask.task.value
                 switch dataResponse.result {
                 case .success(let value):
@@ -107,30 +109,30 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable {
                         encoding: endpoint.encoding,
                         headers: endpoint.headers
                     )
-                        .goodify(type: Result.self, validator: validationProvider)
-                        .response
+                    .goodify(type: Result.self, validator: validationProvider)
+                    .response
 
                     return result.map { $0 as Result }
                 }
 
-                logger.log(message: "🚀 taskID: \(taskID): Task created", level: .info)
+                logger.log(message: "🚀 taskId: \(taskId): Task created", level: .info)
 
                 let executorTask: ExecutorTask = ExecutorTask(
-                    taskID: taskID,
+                    taskId: taskId,
                     task: requestTask as ExecutorTask.TaskType,
                     cacheTimeout: cacheTimeout
                 )
 
-                runningRequestTasks[taskID] = executorTask
+                DeduplicatingRequestExecutor.runningRequestTasks[taskId] = executorTask
 
                 let dataResponse = await requestTask.value
                 switch dataResponse.result {
                 case .success(let value):
-                    logger.log(message: "🚀 taskID: \(taskID): Task finished successfully", level: .info)
+                    logger.log(message: "🚀 taskId: \(taskId): Task finished successfully", level: .info)
                     if cacheTimeout > 0 {
-                        runningRequestTasks[taskID]?.finishDate = Date()
+                        DeduplicatingRequestExecutor.runningRequestTasks[taskId]?.finishDate = Date()
                     } else {
-                        runningRequestTasks[taskID] = nil
+                        DeduplicatingRequestExecutor.runningRequestTasks[taskId] = nil
                     }
 
                     guard let result = value as? Result else {
@@ -139,8 +141,8 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable {
                     return result
 
                 case .failure(let error):
-                    logger.log(message: "🚀 taskID: \(taskID): Task finished with error", level: .error)
-                    runningRequestTasks[taskID] = nil
+                    logger.log(message: "🚀 taskId: \(taskId): Task finished with error", level: .error)
+                    DeduplicatingRequestExecutor.runningRequestTasks[taskId] = nil
                     throw error
                 }
             }

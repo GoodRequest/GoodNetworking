@@ -16,7 +16,7 @@ final class DeduplicatingExecutorTests: XCTestCase {
     func testConcurrentRequestsAreDeduplicated() async throws {
         // Setup
         let logger = TestingLogger()
-        let executor = DeduplicatingRequestExecutor(taskID: "People", logger: logger)
+        let executor = DeduplicatingRequestExecutor(taskId: "People", logger: logger)
         let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
 
@@ -45,8 +45,8 @@ final class DeduplicatingExecutorTests: XCTestCase {
     func testDifferentRequestsAreNotDeduplicated() async throws {
         // Setup
         let logger = TestingLogger()
-        let executor = DeduplicatingRequestExecutor(taskID: "Luke", logger: logger)
-        let executor2 = DeduplicatingRequestExecutor(taskID: "Vader", logger: logger)
+        let executor = DeduplicatingRequestExecutor(taskId: "Luke", logger: logger)
+        let executor2 = DeduplicatingRequestExecutor(taskId: "Vader", logger: logger)
         let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
 
@@ -76,7 +76,7 @@ final class DeduplicatingExecutorTests: XCTestCase {
     func testSequentialRequestsAreNotDeduplicated() async throws {
         // Setup
         let logger = TestingLogger()
-        let executor = DeduplicatingRequestExecutor(taskID: "People", logger: logger)
+        let executor = DeduplicatingRequestExecutor(taskId: "People", logger: logger)
         let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
 
@@ -107,7 +107,7 @@ final class DeduplicatingExecutorTests: XCTestCase {
     func testErrorHandling() async throws {
         // Setup
         let logger = TestingLogger()
-        let executor = DeduplicatingRequestExecutor(taskID: "People", logger: logger)
+        let executor = DeduplicatingRequestExecutor(taskId: "Invalid", logger: logger)
         let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
 
@@ -116,7 +116,7 @@ final class DeduplicatingExecutorTests: XCTestCase {
 
         // When/Then
         do {
-            let result: SwapiPerson = try await executor
+            let _: SwapiPerson = try await executor
                 .executeRequest(endpoint: invalidEndpoint, session: session, baseURL: baseURL)
 
             XCTFail("Expected error to be thrown")

@@ -16,7 +16,7 @@ import Alamofire
 /// Example usage:
 /// ```swift
 /// let task = ExecutorTask(
-///     taskID: "fetch_user",
+///     taskId: "fetch_user",
 ///     task: Task { ... },
 ///     cacheTimeout: 300 // 5 minutes
 /// )
@@ -30,7 +30,7 @@ public final class ExecutorTask {
     var finishDate: Date?
     
     /// A unique identifier for the task
-    let taskID: String
+    let taskId: String
     
     /// The underlying asynchronous task
     let task: TaskType
@@ -51,11 +51,11 @@ public final class ExecutorTask {
     /// Creates a new executor task
     ///
     /// - Parameters:
-    ///   - taskID: A unique identifier for the task
+    ///   - taskId: A unique identifier for the task
     ///   - task: The underlying asynchronous task
     ///   - cacheTimeout: The duration in seconds after which cached results are considered stale
-    init(taskID: String, task: TaskType, cacheTimeout: TimeInterval) {
-        self.taskID = taskID
+    init(taskId: String, task: TaskType, cacheTimeout: TimeInterval) {
+        self.taskId = taskId
         self.task = task
         self.cacheTimeout = cacheTimeout
     }

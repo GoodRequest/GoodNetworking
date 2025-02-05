@@ -17,7 +17,7 @@ public actor DeduplicatingResultProvider: ResultProviding, Sendable {
     // Shared in-memory cache
     private static var cache: [String: (value: Sendable, finishDate: Date)] = [:]
 
-    private let taskID: String
+    private let taskId: String
     private let cacheTimeout: TimeInterval
     private var shouldUpdateOnStore: Bool = false
 
@@ -32,14 +32,14 @@ public actor DeduplicatingResultProvider: ResultProviding, Sendable {
         }
     }
 
-    public init(taskID: String, cacheTimeout: TimeInterval = 6) {
-        self.taskID = taskID
+    public init(taskId: String, cacheTimeout: TimeInterval = 6) {
+        self.taskId = taskId
         self.cacheTimeout = cacheTimeout
     }
 
-    /// Generates a unique cache key using the endpoint and taskID
+    /// Generates a unique cache key using the endpoint and taskId
     private func cacheKey(for endpoint: Endpoint) -> String {
-        return "\(taskID)_\(endpoint.path)"
+        return "\(taskId)_\(endpoint.path)"
     }
 
     /// Checks if the cached response has expired
