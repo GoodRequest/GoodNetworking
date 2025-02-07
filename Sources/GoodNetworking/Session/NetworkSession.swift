@@ -160,7 +160,7 @@ public extension NetworkSession {
             )
 
             // Validate API result from executor
-            try await validationProvider.validate(statusCode: response.response?.statusCode!, data: response.data)
+            try validationProvider.validate(statusCode: response.response!.statusCode, data: response.data)
         }
     }
 
@@ -206,7 +206,7 @@ public extension NetworkSession {
                 )
 
                 // Validate API result from executor
-                try validationProvider.validate(statusCode: response.response?.statusCode!, data: response.data)
+                try validationProvider.validate(statusCode: response.response!.statusCode, data: response.data)
 
                 // Decode
                 return try decodeResponse(response)
@@ -245,7 +245,7 @@ public extension NetworkSession {
                     baseURL: resolvedBaseUrl
                 )
 
-                try validationProvider.validate(statusCode: response.response?.statusCode!, data: response.data)
+                try validationProvider.validate(statusCode: response.response!.statusCode, data: response.data)
 
                 return response.data ?? Data()
             }
