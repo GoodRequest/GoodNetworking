@@ -142,6 +142,50 @@ public extension NetworkSession {
     ///   - requestExecutor: The component responsible for executing the network request
     /// - Returns: A decoded instance of the specified Result type
     /// - Throws: A Failure error if any step in the request process fails
+    func request<Failure: Error>(
+        endpoint: Endpoint,
+        baseUrlProvider: BaseUrlProviding? = nil,
+        requestExecutor: RequestExecuting = DefaultRequestExecutor(),
+        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
+    ) async throws(Failure) {
+        try await catchingFailureEmpty(validationProvider: validationProvider) {
+            let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+            let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
+
+            // If not call request executor to use the API
+            let response = await requestExecutor.executeRequest(
+                endpoint: endpoint,
+                session: resolvedSession,
+                baseURL: resolvedBaseUrl
+            )
+
+            guard let statusCode = response.response?.statusCode else {
+                throw response.error ?? NetworkError.sessionError
+            }
+
+            // Validate API result from executor
+            try validationProvider.validate(statusCode: statusCode, data: response.data)
+        }
+    }
+
+    /// Performs a network request that returns a decoded response.
+    ///
+    /// This method handles the complete lifecycle of a network request, including:
+    /// - Base URL resolution
+    /// - Session validation
+    /// - Request execution
+    /// - Response validation
+    /// - Error transformation
+    /// - Response decoding
+    ///
+    /// - Parameters:
+    ///   - endpoint: The endpoint to request, containing URL, method, parameters, and headers
+    ///   - baseUrlProvider: Optional override for the base URL provider
+    ///   - validationProvider: Provider for custom response validation logic
+    ///   - resultProvider: Optional provider for resolving results without network calls
+    ///   - requestExecutor: The component responsible for executing the network request
+    /// - Returns: A decoded instance of the specified Result type
+    /// - Throws: A Failure error if any step in the request process fails
     func request<Result: DataType, Failure: Error>(
         endpoint: Endpoint,
         baseUrlProvider: BaseUrlProviding? = nil,
@@ -165,26 +209,15 @@ public extension NetworkSession {
                     baseURL: resolvedBaseUrl
                 )
 
-                // Validate API result from executor
-                let validationResult = goodifyValidation(
-                    request: response.request,
-                    response: response.response!,
-                    data: response.data,
-                    validator: validationProvider
-                )
+                guard let statusCode = response.response?.statusCode else {
+                    throw response.error ?? NetworkError.sessionError
+                }
 
-                // If validation fails throw
-                if case Alamofire.DataRequest.ValidationResult.failure(let error) = validationResult { throw error }
+                // Validate API result from executor
+                try validationProvider.validate(statusCode: statusCode, data: response.data)
 
                 // Decode
-                let decoder = (Result.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
-
-                do {
-                    let result = try decoder.decode(Result.self, from: response.data ?? Data())
-                    return result
-                } catch {
-                    throw NetworkError.missingRemoteData
-                }
+                return try decodeResponse(response)
             }
         }
     }
@@ -220,15 +253,11 @@ public extension NetworkSession {
                     baseURL: resolvedBaseUrl
                 )
 
-                let validationResult = goodifyValidation(
-                    request: response.request,
-                    response: response.response!,
-                    data: response.data,
-                    validator: validationProvider
-                )
+                guard let statusCode = response.response?.statusCode else {
+                    throw response.error ?? NetworkError.sessionError
+                }
 
-                // If validation fails throw
-                if case Alamofire.DataRequest.ValidationResult.failure(let error) = validationResult { throw error }
+                try validationProvider.validate(statusCode: statusCode, data: response.data)
 
                 return response.data ?? Data()
             }
@@ -265,43 +294,83 @@ public extension NetworkSession {
 
 public extension NetworkSession {
 
-    /// Creates a download request that saves the response to a file.
+    /// Creates a download request that saves the response to a file and provides progress updates.
     ///
     /// This method handles downloading files from a network endpoint and saving them
     /// to the app's documents directory. It supports:
     /// - Custom file naming
     /// - Automatic directory creation
     /// - Previous file removal
+    /// - Progress tracking via AsyncStream
     ///
     /// - Parameters:
     ///   - endpoint: The endpoint to download from
     ///   - baseUrlProvider: Optional override for the base URL provider
     ///   - customFileName: The name to use for the saved file
-    /// - Returns: An Alamofire DownloadRequest instance
+    /// - Returns: An AsyncStream that emits download progress and final URL
     /// - Throws: A NetworkError if the download setup fails
-    func download(
+    func download<Failure: Error>(
         endpoint: Endpoint,
         baseUrlProvider: BaseUrlProviding? = nil,
-        customFileName: String
-    ) async throws(NetworkError) -> DownloadRequest {
-        let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
-        let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
+        customFileName: String,
+        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
+    ) -> AsyncThrowingStream<(progress: Double, url: URL?), Error> {
+        return AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    // Resolve the base URL and session before starting the stream
+                    let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+                    let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
-        let destination: DownloadRequest.Destination = { temporaryURL, _ in
-            let directoryURLs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-            let url = directoryURLs.first?.appendingPathComponent(customFileName) ?? temporaryURL
+                    // Ensure we can create a valid URL
+                    guard let downloadURL = try? endpoint.url(on: resolvedBaseUrl) else {
+                        continuation.finish(throwing: validationProvider.transformError(NetworkError.invalidBaseURL))
+                        return
+                    }
 
-            return (url, [.removePreviousFile, .createIntermediateDirectories])
+                    // Set up file destination
+                    let destination: DownloadRequest.Destination = { temporaryURL, _ in
+                        let directoryURLs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+                        let url = directoryURLs.first?.appendingPathComponent(customFileName) ?? temporaryURL
+                        return (url, [.removePreviousFile, .createIntermediateDirectories])
+                    }
+
+                    // Start the download
+                    let request = resolvedSession.download(
+                        downloadURL,
+                        method: endpoint.method,
+                        parameters: endpoint.parameters?.dictionary,
+                        encoding: endpoint.encoding,
+                        headers: endpoint.headers,
+                        to: destination
+                    )
+
+                    // Monitor progress
+                    request.downloadProgress { progress in
+                        continuation.yield((progress: progress.fractionCompleted, url: nil))
+                    }
+
+                    // Handle response
+                    request.response { response in
+                        switch response.result {
+                        case .success:
+                            if let destinationURL = response.fileURL {
+                                continuation.yield((progress: 1.0, url: destinationURL))
+                            } else {
+                                continuation.finish(throwing: validationProvider.transformError(.missingRemoteData))
+                            }
+                        case .failure(let error):
+                            continuation.finish(throwing: error)
+                        }
+
+                        continuation.finish()
+                    }
+
+                } catch {
+                    continuation.finish(throwing: validationProvider.transformError(.sessionError))
+                }
+            }
         }
-
-        return resolvedSession.download(
-            try? endpoint.url(on: resolvedBaseUrl),
-            method: endpoint.method,
-            parameters: endpoint.parameters?.dictionary,
-            encoding: endpoint.encoding,
-            headers: endpoint.headers,
-            to: destination
-        )
     }
 
 }
@@ -446,29 +515,45 @@ extension NetworkSession {
         }
     }
 
-    /// Validates the response using a custom validator.
+    /// Executes code with standardized error handling.
     ///
-    /// This method checks if the response data is valid according to the provided `ValidationProviding` instance.
-    /// If the validation fails, an error is returned.
+    /// This method provides consistent error handling by:
+    /// - Catching and transforming network errors
+    /// - Handling Alamofire-specific errors
+    /// - Converting errors to the expected failure type
     ///
     /// - Parameters:
-    ///   - request: The original URL request.
-    ///   - response: The HTTP response received.
-    ///   - data: The response data.
-    ///   - validator: The validation provider used to validate the response.
-    /// - Returns: A `ValidationResult` indicating whether the validation succeeded or failed.
-    private func goodifyValidation(
-        request: URLRequest?,
-        response: HTTPURLResponse,
-        data: Data?,
-        validator: any ValidationProviding
-    ) -> Alamofire.Request.ValidationResult {
+    ///   - validationProvider: Provider for error transformation
+    ///   - body: The code to execute
+    /// - Returns: The result of type Result
+    /// - Throws: A transformed error matching the Failure type
+    func catchingFailureEmpty<Failure: Error>(
+        validationProvider: any ValidationProviding<Failure>,
+        body: () async throws -> Void
+    ) async throws(Failure) {
         do {
-            try validator.validate(statusCode: response.statusCode, data: data)
-            return .success(())
-        } catch let error {
-            return .failure(error)
+            return try await body()
+        } catch let networkError as NetworkError {
+            throw validationProvider.transformError(networkError)
+        } catch let error as AFError {
+            if let underlyingError = error.underlyingError as? Failure {
+                throw underlyingError
+            } else if let underlyingError = error.underlyingError as? NetworkError {
+                throw validationProvider.transformError(underlyingError)
+            } else {
+                throw validationProvider.transformError(NetworkError.sessionError)
+            }
+        } catch {
+            throw validationProvider.transformError(NetworkError.sessionError)
         }
+    }
+
+    func decodeResponse<Result: Decodable>(
+        _ response: DataResponse<Data?, AFError>,
+        defaultDecoder: JSONDecoder = JSONDecoder()
+    ) throws -> Result {
+        let decoder = (Result.self as? WithCustomDecoder.Type)?.decoder ?? defaultDecoder
+        return try decoder.decode(Result.self, from: response.data ?? Data())
     }
 
 }

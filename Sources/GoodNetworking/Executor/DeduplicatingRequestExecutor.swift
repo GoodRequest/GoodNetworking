@@ -28,7 +28,7 @@ import GoodLogger
 public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Identifiable {
 
     /// A unique identifier used to track and deduplicate requests
-    private let taskId: String
+    private let taskId: String?
 
     #warning("Timeout should be configurable based on taskId")
     /// The duration in seconds for which successful responses are cached
@@ -48,7 +48,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
     ///   - taskId: A unique identifier for deduplicating requests
     ///   - cacheTimeout: The duration in seconds for which successful responses are cached. Defaults to 6 seconds.
     ///                   Set to 0 to disable caching.
-    public init(taskId: String, cacheTimeout: TimeInterval = 6, logger: GoodLogger? = nil) {
+    public init(taskId: String? = nil, cacheTimeout: TimeInterval = 6, logger: GoodLogger? = nil) {
         if let logger {
             self.logger = logger
         } else {
@@ -85,6 +85,17 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
         DeduplicatingRequestExecutor.runningRequestTasks = DeduplicatingRequestExecutor.runningRequestTasks
             .filter { !$0.value.exceedsTimeout }
 
+            guard let taskId = self.taskId ?? (try? endpoint.url(on: baseURL).absoluteString) else {
+                return DataResponse(
+                    request: nil,
+                    response: nil,
+                    data: nil,
+                    metrics: nil,
+                    serializationDuration: 0.0,
+                    result: .failure(.invalidURL(url: URL(string: "\(baseURL)/\(endpoint.path)")))
+                )
+            }
+        
             if let runningTask = DeduplicatingRequestExecutor.runningRequestTasks[taskId] {
                 logger.log(message: "🚀 taskId: \(taskId) Cached value used", level: .info)
                 return await runningTask.task.value
@@ -117,7 +128,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
 
                 let dataResponse = await requestTask.value
                 switch dataResponse.result {
-                case .success(let value):
+                case .success:
                     logger.log(message: "🚀 taskId: \(taskId): Task finished successfully", level: .info)
 
                     if cacheTimeout > 0 {

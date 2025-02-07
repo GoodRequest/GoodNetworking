@@ -34,7 +34,7 @@
 /// let config = NetworkSessionConfiguration(eventMonitors: [monitor])
 /// let session = NetworkSession(configuration: config)
 /// ```
-@preconcurrency import Alamofire
+import Alamofire
 import Combine
 import GoodLogger
 import Foundation
@@ -52,7 +52,7 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
             maxVerboseLogSizeBytes: Int = 100_000,
             slowRequestThreshold: TimeInterval = 1.0,
             prefixes: Prefixes = Prefixes(),
-            mimeTypeWhilelistConfiguration: MimeTypeWhitelistConfiguration? = nil
+            mimeTypeWhilelistConfiguration: MimeTypeWhitelistConfiguration? = MimeTypeWhitelistConfiguration()
         ) {
             self.verbose = verbose
             self.prettyPrinted = prettyPrinted
@@ -149,7 +149,7 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
         self.configuration = configuration
     }
 
-    public func request<T>(_ request: DataRequest, didParseResponse response: DataResponse<T, AFError>) {
+    public func request(_ request: DataRequest, didParseResponse response: DataResponse<Data?, AFError>) {
         let requestSize = request.request?.httpBody?.count ?? 0
         let responseSize = response.data?.count ?? 0
 

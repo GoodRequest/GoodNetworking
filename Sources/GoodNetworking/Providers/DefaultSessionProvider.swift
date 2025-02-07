@@ -46,17 +46,7 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
             eventMonitors: configuration.eventMonitors
         )
 
-        if let logger {
-            self.logger = logger
-        }
-    }
-
-    var defaultLogger: GoodLogger {
-        if #available(iOS 14, *) {
-            return OSLogLogger(logMetaData: false)
-        } else {
-            return PrintLogger(logMetaData: false)
-        }
+        self.logger = logger
     }
 
     /// Initializes the session provider with an existing `Alamofire.Session`.
@@ -71,9 +61,7 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
             eventMonitors: [session.eventMonitor]
         )
 
-        if let logger {
-            self.logger = logger
-        }
+        self.logger = logger
     }
 
     /// A Boolean value indicating that the session is always valid.
