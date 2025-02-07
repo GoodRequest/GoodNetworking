@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Alamofire
 
 /// A protocol for providing validation and error transformation in network requests.
 ///

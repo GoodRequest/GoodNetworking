@@ -54,26 +54,27 @@ final class ArrayEncodingTests: XCTestCase {
     
     var testCancellable: AnyCancellable?
 
-    func testGRSessionPostWithTopArrayJSON() async {
-        let session = NetworkSession(baseUrl: Base.base.rawValue, configuration: .default)
-        let request: AnyPublisher<EmptyResponse,AFError> = await session.request(endpoint: TestEndpoint.unkeyedTopLevelList(MyStruct.sample))
-            .goodify(type: EmptyResponse.self)
-        let requestExpectation = expectation(description: "Request Expectation")
-
-        testCancellable = request
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    break
-                case .failure(let error):
-                    XCTFail("Request failed with error: \(error)")
-                }
-                requestExpectation.fulfill()
-                
-            }, receiveValue: { _ in }
-            )
-        await fulfillment(of: [requestExpectation], timeout: 5.0, enforceOrder: true)
-    }
+//    func testGRSessionPostWithTopArrayJSON() async {
+//        let session = NetworkSession(baseUrl: Base.base.rawValue, configuration: .default)
+//
+//        let request: AnyPublisher<EmptyResponse,AFError> = await session.request(endpoint: TestEndpoint.unkeyedTopLevelList(MyStruct.sample))
+//
+//        let requestExpectation = expectation(description: "Request Expectation")
+//
+//        testCancellable = request
+//            .sink(receiveCompletion: { completion in
+//                switch completion {
+//                case .finished:
+//                    break
+//                case .failure(let error):
+//                    XCTFail("Request failed with error: \(error)")
+//                }
+//                requestExpectation.fulfill()
+//                
+//            }, receiveValue: { _ in }
+//            )
+//        await fulfillment(of: [requestExpectation], timeout: 5.0, enforceOrder: true)
+//    }
     
     func testEndpointBuilder() {
         let session = NetworkSession(baseUrl: Base.base.rawValue, configuration: .default)

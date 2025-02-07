@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Alamofire
 
 /// A default implementation of the `ValidationProviding` protocol for handling network response validation.
 ///

@@ -41,7 +41,35 @@ final class DeduplicatingExecutorTests: XCTestCase {
         XCTAssertEqual(result2.name, "Luke Skywalker")
         XCTAssertTrue(logger.messages.contains(where: { $0.contains("Cached value used") } ))
     }
-    
+
+    func testConcurrentRequestsAreDeduplicatedDefaultTaskID() async throws {
+        // Setup
+        let logger = TestingLogger()
+        let executor = DeduplicatingRequestExecutor(logger: logger)
+        let session: Session! = Session()
+        let baseURL = "https://swapi.dev/api"
+        let networkSession = NetworkSession(baseUrlProvider: baseURL, session: session)
+        // Given
+        let endpoint = SwapiEndpoint.luke
+
+        // When
+        async let firstResult: SwapiPerson = networkSession.request(
+            endpoint: endpoint,
+            requestExecutor: executor
+        )
+
+        async let secondResult: SwapiPerson = networkSession.request(
+            endpoint: endpoint,
+            requestExecutor: executor
+        )
+
+        // Then
+        let (result1, result2) = try await (firstResult, secondResult)
+        XCTAssertEqual(result1.name, "Luke Skywalker")
+        XCTAssertEqual(result2.name, "Luke Skywalker")
+        XCTAssertTrue(logger.messages.contains(where: { $0.contains("Cached value used") } ))
+    }
+
     func testDifferentRequestsAreNotDeduplicated() async throws {
         // Setup
         let logger = TestingLogger()

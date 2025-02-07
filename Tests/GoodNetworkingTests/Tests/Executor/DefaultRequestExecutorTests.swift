@@ -123,17 +123,27 @@ final class DefaultRequestExecutorTestsGenerated: XCTestCase {
         XCTAssertEqual(response.code, 202)
     }
 
-    func testNoContent204() async throws {
-        let response: MockResponse = try await networkSession.request(endpoint: StatusAPI.status(204), requestExecutor: executor)
-        XCTAssertEqual(response.code, 204)
+    func testNoContent204ExpectingNonEmptyCreatableType() async throws {
+        struct EmptyResponse: Decodable {}
+        do {
+            let _: EmptyResponse = try await networkSession.request(
+                endpoint: StatusAPI.status(204),
+                requestExecutor: executor,
+                validationProvider: DefaultValidationProvider(emptyResponseCodes: [204])
+            )
+            XCTFail("Expected no content error")
+        } catch {
+            XCTAssert(error == NetworkError.missingRemoteData)
+        }
+    }
 
-//        do {
-//            let _: MockResponse = try await networkSession.request(endpoint: StatusAPI.status(204), requestExecutor: executor)
-//            XCTFail("Expected no content error")
-//        } catch {
-//            print(error.localizedDescription)
-//            XCTAssertTrue(error.statusCode == 204)
-//        }
+    func testNoContent204ExpectingEmpty() async throws {
+        try await networkSession.request(
+            endpoint: StatusAPI.status(204),
+            requestExecutor: executor,
+            validationProvider: DefaultValidationProvider(emptyResponseCodes: [204])
+        )
+        XCTAssertNotNil()
     }
 
     // MARK: - Redirection Responses (3xx)
@@ -141,36 +151,28 @@ final class DefaultRequestExecutorTestsGenerated: XCTestCase {
     func testPermanentRedirectToHTMLExpectingJSON301() async throws {
         do {
             let _: MockResponse = try await networkSession.request(endpoint: StatusAPI.status(301), requestExecutor: executor)
-            XCTFail("Expected 301 error")
+            XCTFail("Expected missingRemoteData")
         } catch {
             XCTAssert(error == NetworkError.missingRemoteData)
         }
     }
 
-    func testTemporaryRedirect301() async throws {
+    func testNotModifiedToHTMLExpectingJSON304() async throws {
         do {
-            let _: MockResponse = try await networkSession.request(endpoint: StatusAPI.status(301), requestExecutor: executor)
-            XCTFail("Expected 301 error")
+            let _: EmptyResponse = try await networkSession.request(endpoint: StatusAPI.status(304), requestExecutor: executor)
+            XCTFail("Expected missingRemoteData")
         } catch {
+            print(error.errorDescription)
             XCTAssert(error == NetworkError.missingRemoteData)
         }
     }
 
-    func testTemporaryRedirect307() async throws {
+    func testTemporaryRedirectToHTMLExpectingJSON307() async throws {
         do {
             let _: MockResponse = try await networkSession.request(endpoint: StatusAPI.status(307), requestExecutor: executor)
-            XCTFail("Expected 307 error")
+            XCTFail("Expected missingRemoteData")
         } catch {
-            XCTAssertTrue(error.statusCode == 200)
-        }
-    }
-
-    func testNotModified304() async throws {
-        do {
-            let _: MockResponse = try await networkSession.request(endpoint: StatusAPI.status(304), requestExecutor: executor)
-            XCTFail("Expected 304 error")
-        } catch {
-            XCTAssertTrue(error.statusCode == 200)
+            XCTAssert(error == NetworkError.missingRemoteData)
         }
     }
 
