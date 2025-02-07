@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum NetworkError: Error, Hashable {
+public enum NetworkError: LocalizedError, Hashable {
 
     case endpoint(EndpointError)
     case remote(statusCode: Int, data: Data?)
@@ -16,17 +16,18 @@ public enum NetworkError: Error, Hashable {
     case missingRemoteData
     case sessionError
     case invalidBaseURL
+    case cancelled
 
-    var localizedDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .endpoint(let endpointError):
-            return endpointError.localizedDescription
+            return endpointError.errorDescription
 
         case .remote(let statusCode, _):
             return "HTTP \(statusCode) - \(HTTPURLResponse.localizedString(forStatusCode: statusCode))"
 
         case .paging(let pagingError):
-            return pagingError.localizedDescription
+            return pagingError.errorDescription
 
         case .missingLocalData:
             return "Missing data - Failed to map local resource to remote type"
@@ -39,6 +40,9 @@ public enum NetworkError: Error, Hashable {
 
         case .invalidBaseURL:
             return "Resolved server base URL is invalid"
+
+        case .cancelled:
+            return "Operation cancelled"
         }
     }
 
@@ -60,12 +64,12 @@ public enum NetworkError: Error, Hashable {
 
 }
 
-public enum EndpointError: Error {
+public enum EndpointError: LocalizedError {
 
     case noSuchEndpoint
     case operationNotSupported
 
-    var localizedDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .noSuchEndpoint:
             return "No such endpoint"
@@ -77,12 +81,12 @@ public enum EndpointError: Error {
 
 }
 
-public enum PagingError: Error {
+public enum PagingError: LocalizedError {
 
     case noMorePages
     case nonPageableList
 
-    var localizedDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .noMorePages:
             return "No more pages available"

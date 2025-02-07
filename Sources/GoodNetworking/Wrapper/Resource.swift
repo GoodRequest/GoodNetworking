@@ -13,11 +13,11 @@ import GoodLogger
 
 public struct RawResponse: Sendable {
 
-    var create: (NetworkSession.DataType)?
-    var read: (NetworkSession.DataType)?
-    var update: (NetworkSession.DataType)?
-    var delete: (NetworkSession.DataType)?
-    var list: (NetworkSession.DataType)?
+    var create: (Decodable & Sendable)?
+    var read: (Decodable & Sendable)?
+    var update: (Decodable & Sendable)?
+    var delete: (Decodable & Sendable)?
+    var list: (Decodable & Sendable)?
 
 }
 
@@ -30,6 +30,7 @@ public struct RawResponse: Sendable {
 
     private(set) public var state: ResourceState<R.Resource, NetworkError>
     private var listState: ResourceState<[R.Resource], NetworkError>
+    private var listParameters: Any?
 
     public var value: R.Resource? {
         get {
@@ -114,27 +115,29 @@ extension Resource {
     }
 
     public func create() async throws {
-        logger.log(message: "CREATE operation not defined for resource \(String(describing: R.self))", level: .error)
+        logger.log(level: .error, message: "CREATE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
     public func read(forceReload: Bool = false) async throws {
-        logger.log(message: "READ operation not defined for resource \(String(describing: R.self))", level: .error)
+        logger.log(level: .error, message: "READ operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
     public func updateRemote() async throws {
-        logger.log(message: "UPDATE operation not defined for resource \(String(describing: R.self))", level: .error)
+        logger.log(level: .error, message: "UPDATE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
     public func delete() async throws {
-        logger.log(message: "DELETE operation not defined for resource \(String(describing: R.self))", level: .error)
+        logger.log(level: .error, message: "DELETE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
-    public func firstPage(forceReload: Bool = false) async throws {
-        logger.log(message: "LIST operation not defined for resource \(String(describing: R.self))", level: .error)
+    public func firstPage(parameters: Any? = nil, forceReload: Bool = false) async throws {
+        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger.log(level: .error, message: "Check type of parameters passed to this resource.", privacy: .auto)
+        logger.log(level: .error, message: "Current parameters type: \(type(of: parameters))", privacy: .auto)
     }
 
     public func nextPage() async throws {
-        logger.log(message: "LIST operation not defined for resource \(String(describing: R.self))", level: .error)
+        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
 }
@@ -146,7 +149,7 @@ extension Resource where R: Creatable {
 
     public func create() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.", level: .error)
+            return logger.log(level: .error, message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.", privacy: .auto)
         }
         try await create(request: request)
     }
@@ -168,11 +171,12 @@ extension Resource where R: Creatable {
             )
             self.rawResponse.create = response
 
-            let resource = try R.resource(from: response)
+            let resource = try R.resource(from: response, updating: resource)
+            try Task.checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
-        } catch let error {
+        } catch let error as NetworkError {
             if let resource {
                 self.state = .stale(resource, error)
                 self.listState = .stale([resource], error)
@@ -181,6 +185,8 @@ extension Resource where R: Creatable {
                 self.listState = .failure(error)
             }
 
+            throw error
+        } catch {
             throw error
         }
     }
@@ -197,7 +203,7 @@ extension Resource where R: Readable {
         let resource = state.value
         guard let request = try R.request(from: resource) else {
             self.state = .idle
-            return logger.log(message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.", level: .error)
+            return logger.log(level: .error, message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.", privacy: .auto)
         }
 
         try await read(request: request, forceReload: forceReload)
@@ -205,7 +211,7 @@ extension Resource where R: Readable {
 
     public func read(request: R.ReadRequest, forceReload: Bool = false) async throws {
         guard !state.isAvailable || forceReload else {
-            return logger.log(message: "Skipping read - value already exists", level: .info)
+            return logger.log(level: .info, message: "Skipping read - value already exists", privacy: .auto)
         }
 
         let resource = state.value
@@ -219,11 +225,12 @@ extension Resource where R: Readable {
             )
             self.rawResponse.read = response
 
-            let resource = try R.resource(from: response)
+            let resource = try R.resource(from: response, updating: resource)
+            try Task.checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
-        } catch let error {
+        } catch let error as NetworkError {
             if let resource {
                 self.state = .stale(resource, error)
                 self.listState = .stale([resource], error)
@@ -232,6 +239,8 @@ extension Resource where R: Readable {
                 self.listState = .failure(error)
             }
 
+            throw error
+        } catch {
             throw error
         }
     }
@@ -245,7 +254,7 @@ extension Resource where R: Updatable {
 
     public func updateRemote() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(message: "Updating resource to nil always fails! Use DELETE instead.", level: .error)
+            return logger.log(level: .error, message: "Updating resource to nil always fails! Use DELETE instead.", privacy: .auto)
         }
         try await updateRemote(request: request)
     }
@@ -267,11 +276,12 @@ extension Resource where R: Updatable {
             )
             self.rawResponse.update = response
 
-            let resource = try R.resource(from: response)
+            let resource = try R.resource(from: response, updating: resource)
+            try Task.checkCancellation()
 
             self.state = .available(resource)
             self.listState = .available([resource])
-        } catch let error {
+        } catch let error as NetworkError {
             if let resource {
                 self.state = .stale(resource, error)
                 self.listState = .stale([resource], error)
@@ -280,6 +290,8 @@ extension Resource where R: Updatable {
                 self.listState = .failure(error)
             }
 
+            throw error
+        } catch {
             throw error
         }
     }
@@ -293,7 +305,7 @@ extension Resource where R: Deletable {
 
     public func delete() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.", level: .error)
+            return logger.log(level: .error, message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.", privacy: .auto)
         }
         try await delete(request: request)
     }
@@ -309,12 +321,24 @@ extension Resource where R: Deletable {
             )
             self.rawResponse.delete = response
 
-            self.state = .idle
-            self.listState = .idle
-        } catch let error {
+            let resource = try R.resource(from: response, updating: state.value)
+            try Task.checkCancellation()
+
+            if let resource {
+                // case with partial/soft delete only
+                self.state = .available(resource)
+                self.listState = .available([resource])
+            } else {
+                self.state = .idle
+                #warning("TODO: vymazat z listu iba prave vymazovany element")
+                self.listState = .idle
+            }
+        } catch let error as NetworkError {
             self.state = .failure(error)
             self.listState = .failure(error)
 
+            throw error
+        } catch {
             throw error
         }
     }
@@ -342,13 +366,14 @@ extension Resource where R: Listable {
         elements.endIndex
     }
 
-    public func firstPage(forceReload: Bool = false) async throws {
+    public func firstPage(parameters: Any? = nil, forceReload: Bool = false) async throws {
         if !(listState.value?.isEmpty ?? true) || forceReload {
             self.listState = .idle
             self.state = .loading
         }
+        self.listParameters = parameters
 
-        let firstPageRequest = R.firstPageRequest()
+        let firstPageRequest = R.firstPageRequest(withParameters: parameters)
         try await list(request: firstPageRequest)
     }
 
@@ -366,6 +391,7 @@ extension Resource where R: Listable {
 
         return R.nextPageRequest(
             currentResource: currentList,
+            parameters: self.listParameters,
             lastResponse: lastResponse
         )
     }
@@ -396,44 +422,6 @@ extension Resource where R: Listable {
             self.listState = .failure(error)
 
             throw error
-        }
-    }
-
-}
-
-// MARK: - Pager
-
-@available(iOS 17.0, *)
-public struct ResourcePager<R: Listable>: View {
-
-    @State private var isFinished = false
-    private let resource: () -> Resource<R>
-
-    public init(resource: @escaping @autoclosure () -> Resource<R>) {
-        self.resource = resource
-    }
-
-    public var body: some View {
-        Group {
-            if !isFinished {
-                ProgressView()
-            } else {
-                Rectangle().frame(width: 0, height: 0).hidden()
-            }
-        }
-        .onAppear { Task.detached { await getNextPage() }}
-    }
-
-    private func getNextPage() async {
-        if let nextPage = resource().nextPageRequest() {
-            isFinished = false
-            do {
-                try await resource().list(request: nextPage)
-            } catch {
-                isFinished = true
-            }
-        } else {
-            isFinished = true
         }
     }
 

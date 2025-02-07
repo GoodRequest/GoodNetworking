@@ -35,7 +35,16 @@ public extension DataRequest {
         decoder: JSONDecoder = (T.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
     ) -> DataTask<T> {
         return self
-            .validate { self.goodifyValidation(request: $0, response: $1, data: $2, validator: validator) }
+            .validate {
+                self.goodifyValidation(
+                    request: $0,
+                    response: $1,
+                    data: $2,
+                    emptyResponseCodes: emptyResponseCodes,
+                    emptyRequestMethods: emptyRequestMethods,
+                    validator: validator
+                )
+            }
             .serializingDecodable(
                 T.self,
                 automaticallyCancelling: true,
@@ -102,7 +111,16 @@ public extension DataRequest {
         decoder: JSONDecoder = (T.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
     ) -> DataTask<[T]> {
         return self
-            .validate { self.goodifyValidation(request: $0, response: $1, data: $2, validator: validator) }
+            .validate {
+                self.goodifyValidation(
+                    request: $0,
+                    response: $1,
+                    data: $2,
+                    emptyResponseCodes: emptyResponseCodes,
+                    emptyRequestMethods: emptyRequestMethods,
+                    validator: validator
+                )
+            }
             .serializingDecodable(
                 [T].self,
                 automaticallyCancelling: true,
@@ -195,23 +213,58 @@ extension DataRequest {
     ///   - request: The original URL request.
     ///   - response: The HTTP response received.
     ///   - data: The response data.
+    ///   - emptyResponseCodes: The HTTP status codes that indicate an empty response.
+    ///   - emptyRequestMethods: The HTTP methods that indicate an empty response.
     ///   - validator: The validation provider used to validate the response.
     /// - Returns: A `ValidationResult` indicating whether the validation succeeded or failed.
     private func goodifyValidation(
         request: URLRequest?,
         response: HTTPURLResponse,
         data: Data?,
+        emptyResponseCodes: Set<Int>,
+        emptyRequestMethods: Set<HTTPMethod>,
         validator: any ValidationProviding
     ) -> ValidationResult {
         guard let data else {
-            return .failure(AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength))
+            let emptyResponseAllowed = requestAllowsEmptyResponseData(request, emptyRequestMethods: emptyRequestMethods)
+                || responseAllowsEmptyResponseData(response, emptyResponseCodes: emptyResponseCodes)
+            
+            return emptyResponseAllowed
+                ? .success(())
+                : .failure(AFError.responseSerializationFailed(reason: .inputDataNilOrZeroLength))
         }
+
         do {
             try validator.validate(statusCode: response.statusCode, data: data)
             return .success(())
         } catch let error {
             return .failure(error)
         }
+    }
+    
+    /// Determines whether the `request` allows empty response bodies, if `request` exists.
+    ///
+    ///- Parameters:
+    ///   - request: `URLRequest` to evaluate.
+    ///   - emptyRequestMethods: The HTTP methods that indicate an empty response.
+    ///
+    /// - Returns: `Bool` representing the outcome of the evaluation, or `nil` if `request` was `nil`.
+    private func requestAllowsEmptyResponseData(_ request: URLRequest?, emptyRequestMethods: Set<HTTPMethod>) -> Bool {
+        guard let httpMethodString = request?.httpMethod else { return false }
+
+        let httpMethod = HTTPMethod(rawValue: httpMethodString)
+        return emptyRequestMethods.contains(httpMethod)
+    }
+
+    /// Determines whether the `response` allows empty response bodies, if `response` exists.
+    ///
+    ///- Parameters:
+    ///   - request: `HTTPURLResponse` to evaluate.
+    ///   - emptyRequestMethods: The HTTP status codes that indicate an empty response.
+    ///
+    /// - Returns: `Bool` representing the outcome of the evaluation, or `nil` if `response` was `nil`.
+    private func responseAllowsEmptyResponseData(_ response: HTTPURLResponse, emptyResponseCodes: Set<Int>) -> Bool {
+        emptyResponseCodes.contains(response.statusCode)
     }
 
 }
