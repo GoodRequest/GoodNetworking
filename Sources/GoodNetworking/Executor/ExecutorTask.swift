@@ -24,7 +24,7 @@ import Alamofire
 public final class ExecutorTask {
 
     /// Type alias for the underlying asynchronous task that handles network responses
-    typealias TaskType = Task<DataResponse<NetworkSession.DataType, AFError>, Never>
+    typealias TaskType = Task<DataResponse<Data?, AFError>, Never>
 
     /// The date when the task completed execution. `nil` if the task hasn't finished.
     var finishDate: Date?

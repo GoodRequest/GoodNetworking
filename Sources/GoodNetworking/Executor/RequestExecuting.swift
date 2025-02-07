@@ -45,11 +45,10 @@ public protocol RequestExecuting: Sendable {
     ///   - validationProvider: Provider for response validation and error transformation
     /// - Returns: The decoded response of type Result
     /// - Throws: An error of type Failure if the request fails or validation fails
-    func executeRequest<Result: NetworkSession.DataType, Failure: Error>(
+    func executeRequest(
         endpoint: Endpoint,
         session: Session,
-        baseURL: String,
-        validationProvider: any ValidationProviding<Failure>
-    ) async throws(Failure) -> Result
+        baseURL: String
+    ) async -> DataResponse<Data?, AFError>
 
 }

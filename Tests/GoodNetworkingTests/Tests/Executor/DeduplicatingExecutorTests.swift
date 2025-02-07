@@ -8,6 +8,7 @@
 import XCTest
 @testable import GoodNetworking
 import Alamofire
+import GoodLogger
 
 final class DeduplicatingExecutorTests: XCTestCase {
 
@@ -19,20 +20,19 @@ final class DeduplicatingExecutorTests: XCTestCase {
         let executor = DeduplicatingRequestExecutor(taskId: "People", logger: logger)
         let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
-
+        let networkSession = NetworkSession(baseUrlProvider: baseURL, session: session)
         // Given
         let endpoint = SwapiEndpoint.luke
 
         // When
-        async let firstResult: SwapiPerson = executor.executeRequest(
+        async let firstResult: SwapiPerson = networkSession.request(
             endpoint: endpoint,
-            session: session,
-            baseURL: baseURL
+            requestExecutor: executor
         )
-        async let secondResult: SwapiPerson = executor.executeRequest(
+
+        async let secondResult: SwapiPerson = networkSession.request(
             endpoint: endpoint,
-            session: session,
-            baseURL: baseURL
+            requestExecutor: executor
         )
 
         // Then
@@ -49,21 +49,21 @@ final class DeduplicatingExecutorTests: XCTestCase {
         let executor2 = DeduplicatingRequestExecutor(taskId: "Vader", logger: logger)
         let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
+        let networkSession = NetworkSession(baseUrlProvider: baseURL, session: session)
 
         // Given
         let lukeEndpoint = SwapiEndpoint.luke
         let vaderEndpoint = SwapiEndpoint.vader
 
         // When
-        async let lukeResult: SwapiPerson = executor.executeRequest(
+        async let lukeResult: SwapiPerson = networkSession.request(
             endpoint: lukeEndpoint,
-            session: session,
-            baseURL: baseURL
+            requestExecutor: executor
         )
-        async let vaderResult: SwapiPerson = executor2.executeRequest(
+
+        async let vaderResult: SwapiPerson = networkSession.request(
             endpoint: vaderEndpoint,
-            session: session,
-            baseURL: baseURL
+            requestExecutor: executor2
         )
 
         // Then
@@ -79,20 +79,20 @@ final class DeduplicatingExecutorTests: XCTestCase {
         let executor = DeduplicatingRequestExecutor(taskId: "People", logger: logger)
         let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
+        let networkSession = NetworkSession(baseUrlProvider: baseURL, session: session)
 
         // Given
         let endpoint = SwapiEndpoint.luke
         
         // When
-        async let firstResult: SwapiPerson = executor.executeRequest(
+        async let firstResult: SwapiPerson = networkSession.request(
             endpoint: endpoint,
-            session: session,
-            baseURL: baseURL
+            requestExecutor: executor
         )
-        async let secondResult: SwapiPerson = executor.executeRequest(
+
+        async let secondResult: SwapiPerson = networkSession.request(
             endpoint: endpoint,
-            session: session,
-            baseURL: baseURL
+            requestExecutor: executor
         )
 
         let luke = try await firstResult
@@ -108,19 +108,27 @@ final class DeduplicatingExecutorTests: XCTestCase {
         // Setup
         let logger = TestingLogger()
         let executor = DeduplicatingRequestExecutor(taskId: "Invalid", logger: logger)
-        let session: Session! = Session()
         let baseURL = "https://swapi.dev/api"
+        let provider = DefaultSessionProvider(
+            configuration: NetworkSessionConfiguration(
+                eventMonitors: [LoggingEventMonitor(logger: logger)]
+            )
+        )
+        let networkSession = NetworkSession(
+            baseUrlProvider: baseURL,
+            sessionProvider: provider
+        )
 
         // Given
         let invalidEndpoint = SwapiEndpoint.invalid
 
         // When/Then
         do {
-            let _: SwapiPerson = try await executor
-                .executeRequest(endpoint: invalidEndpoint, session: session, baseURL: baseURL)
+            let _: SwapiPerson = try await networkSession.request(endpoint: invalidEndpoint, requestExecutor: executor)
 
             XCTFail("Expected error to be thrown")
         } catch {
+            print(logger.messages)
             XCTAssertTrue(logger.messages.contains(where: { $0.contains("Task finished with error") } ))
         }
     }

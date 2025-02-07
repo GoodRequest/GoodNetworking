@@ -44,55 +44,21 @@ public final actor DefaultRequestExecutor: RequestExecuting, Sendable {
     ///   - validationProvider: Provider for response validation and error transformation
     /// - Returns: The decoded response of type Result
     /// - Throws: An error of type Failure if the request fails or validation fails
-    public func executeRequest<Result: NetworkSession.DataType, Failure: Error>(
+    public func executeRequest(
         endpoint: Endpoint,
         session: Session,
-        baseURL: String,
-        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
-    ) async throws(Failure) -> Result {
-        return try await catchingFailure(validationProvider: validationProvider) {
-            return try await session.request(
+        baseURL: String
+    ) async -> DataResponse<Data?, AFError> {
+        return await withCheckedContinuation { continuation in
+            session.request(
                 try? endpoint.url(on: baseURL),
                 method: endpoint.method,
                 parameters: endpoint.parameters?.dictionary,
                 encoding: endpoint.encoding,
                 headers: endpoint.headers
-            )
-            .goodify(type: Result.self, validator: validationProvider)
-            .value
-        }
-    }
-
-    /// Executes a closure while catching and transforming failures.
-    ///
-    /// This method provides standardized error handling by:
-    /// - Catching and transforming network errors
-    /// - Handling Alamofire-specific errors
-    /// - Converting errors to the expected failure type
-    ///
-    /// - Parameters:
-    ///   - validationProvider: The provider used to transform any errors.
-    ///   - body: The closure to execute.
-    /// - Returns: The result of type `Result`.
-    /// - Throws: A transformed error if the closure fails.
-    func catchingFailure<Result: NetworkSession.DataType, Failure: Error>(
-        validationProvider: any ValidationProviding<Failure>,
-        body: () async throws -> Result
-    ) async throws(Failure) -> Result {
-        do {
-            return try await body()
-        } catch let networkError as NetworkError {
-            throw validationProvider.transformError(networkError)
-        } catch let error as AFError {
-            if let underlyingError = error.underlyingError as? Failure {
-                throw underlyingError
-            } else if let underlyingError = error.underlyingError as? NetworkError {
-                throw validationProvider.transformError(underlyingError)
-            } else {
-                throw validationProvider.transformError(NetworkError.sessionError)
+            ).response { response in
+                continuation.resume(returning: response)
             }
-        } catch {
-            throw validationProvider.transformError(NetworkError.sessionError)
         }
     }
 

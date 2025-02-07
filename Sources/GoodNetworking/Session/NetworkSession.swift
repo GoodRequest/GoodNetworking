@@ -145,22 +145,46 @@ public extension NetworkSession {
     func request<Result: DataType, Failure: Error>(
         endpoint: Endpoint,
         baseUrlProvider: BaseUrlProviding? = nil,
-        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider(),
         resultProvider: ResultProviding? = nil,
-        requestExecutor: RequestExecuting = DefaultRequestExecutor()
+        requestExecutor: RequestExecuting = DefaultRequestExecutor(),
+        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
     ) async throws(Failure) -> Result {
         return try await catchingFailure(validationProvider: validationProvider) {
             let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
             let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
+
+            // Try resolve provided data
             if let result: Result = await resultProvider?.resolveResult(endpoint: endpoint) {
+                // If available directly return them
                 return result
             } else {
-                return try await requestExecutor.executeRequest(
+                // If not call request executor to use the API
+                let response = await requestExecutor.executeRequest(
                     endpoint: endpoint,
                     session: resolvedSession,
-                    baseURL: resolvedBaseUrl,
-                    validationProvider: validationProvider
+                    baseURL: resolvedBaseUrl
                 )
+
+                // Validate API result from executor
+                let validationResult = goodifyValidation(
+                    request: response.request,
+                    response: response.response!,
+                    data: response.data,
+                    validator: validationProvider
+                )
+
+                // If validation fails throw
+                if case Alamofire.DataRequest.ValidationResult.failure(let error) = validationResult { throw error }
+
+                // Decode
+                let decoder = (Result.self as? WithCustomDecoder.Type)?.decoder ?? JSONDecoder()
+
+                do {
+                    let result = try decoder.decode(Result.self, from: response.data ?? Data())
+                    return result
+                } catch {
+                    throw NetworkError.missingRemoteData
+                }
             }
         }
     }
@@ -179,21 +203,35 @@ public extension NetworkSession {
     func requestRaw<Failure: Error>(
         endpoint: Endpoint,
         baseUrlProvider: BaseUrlProviding? = nil,
+        resultProvider: ResultProviding? = nil,
+        requestExecutor: RequestExecuting = DefaultRequestExecutor(),
         validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
     ) async throws(Failure) -> Data {
         return try await catchingFailure(validationProvider: validationProvider) {
             let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
             let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
-            return try await resolvedSession.request(
-                try? endpoint.url(on: resolvedBaseUrl),
-                method: endpoint.method,
-                parameters: endpoint.parameters?.dictionary,
-                encoding: endpoint.encoding,
-                headers: endpoint.headers
-            )
-            .serializingData()
-            .value
+            if let result: Data = await resultProvider?.resolveResult(endpoint: endpoint) {
+                return result
+            } else {
+                let response = await requestExecutor.executeRequest(
+                    endpoint: endpoint,
+                    session: resolvedSession,
+                    baseURL: resolvedBaseUrl
+                )
+
+                let validationResult = goodifyValidation(
+                    request: response.request,
+                    response: response.response!,
+                    data: response.data,
+                    validator: validationProvider
+                )
+
+                // If validation fails throw
+                if case Alamofire.DataRequest.ValidationResult.failure(let error) = validationResult { throw error }
+
+                return response.data ?? Data()
+            }
         }
     }
 
@@ -405,6 +443,31 @@ extension NetworkSession {
             }
         } catch {
             throw validationProvider.transformError(NetworkError.sessionError)
+        }
+    }
+
+    /// Validates the response using a custom validator.
+    ///
+    /// This method checks if the response data is valid according to the provided `ValidationProviding` instance.
+    /// If the validation fails, an error is returned.
+    ///
+    /// - Parameters:
+    ///   - request: The original URL request.
+    ///   - response: The HTTP response received.
+    ///   - data: The response data.
+    ///   - validator: The validation provider used to validate the response.
+    /// - Returns: A `ValidationResult` indicating whether the validation succeeded or failed.
+    private func goodifyValidation(
+        request: URLRequest?,
+        response: HTTPURLResponse,
+        data: Data?,
+        validator: any ValidationProviding
+    ) -> Alamofire.Request.ValidationResult {
+        do {
+            try validator.validate(statusCode: response.statusCode, data: data)
+            return .success(())
+        } catch let error {
+            return .failure(error)
         }
     }
 

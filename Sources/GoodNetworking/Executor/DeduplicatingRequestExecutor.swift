@@ -77,42 +77,32 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
     ///   - validationProvider: Provider for response validation and error transformation
     /// - Returns: The decoded response of type Result
     /// - Throws: An error of type Failure if the request fails or validation fails
-    public func executeRequest<Result: NetworkSession.DataType, Failure: Error>(
+    public func executeRequest(
         endpoint: Endpoint,
         session: Session,
-        baseURL: String,
-        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
-    ) async throws(Failure) -> Result {
+        baseURL: String
+    ) async -> DataResponse<Data?, AFError> {
         DeduplicatingRequestExecutor.runningRequestTasks = DeduplicatingRequestExecutor.runningRequestTasks
             .filter { !$0.value.exceedsTimeout }
 
-        return try await catchingFailure(validationProvider: validationProvider) {
             if let runningTask = DeduplicatingRequestExecutor.runningRequestTasks[taskId] {
                 logger.log(message: "🚀 taskId: \(taskId) Cached value used", level: .info)
-                let dataResponse = await runningTask.task.value
-                switch dataResponse.result {
-                case .success(let value):
-                    if let result = value as? Result {
-                        return result
-                    } else {
-                        throw validationProvider.transformError(NetworkError.sessionError)
-                    }
-                case .failure(let error):
-                    throw error
-                }
+                return await runningTask.task.value
             } else {
                 let requestTask = ExecutorTask.TaskType {
-                    let result = await session.request(
-                        try? endpoint.url(on: baseURL),
-                        method: endpoint.method,
-                        parameters: endpoint.parameters?.dictionary,
-                        encoding: endpoint.encoding,
-                        headers: endpoint.headers
-                    )
-                    .goodify(type: Result.self, validator: validationProvider)
-                    .response
-
-                    return result.map { $0 as Result }
+                    return await withCheckedContinuation { continuation in
+                        session.request(
+                            try? endpoint.url(on: baseURL),
+                            method: endpoint.method,
+                            parameters: endpoint.parameters?.dictionary,
+                            encoding: endpoint.encoding,
+                            headers: endpoint.headers
+                        )
+                        .validate()
+                        .response { response in
+                            continuation.resume(returning: response)
+                        }
+                    }
                 }
 
                 logger.log(message: "🚀 taskId: \(taskId): Task created", level: .info)
@@ -129,57 +119,22 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
                 switch dataResponse.result {
                 case .success(let value):
                     logger.log(message: "🚀 taskId: \(taskId): Task finished successfully", level: .info)
+
                     if cacheTimeout > 0 {
                         DeduplicatingRequestExecutor.runningRequestTasks[taskId]?.finishDate = Date()
                     } else {
                         DeduplicatingRequestExecutor.runningRequestTasks[taskId] = nil
                     }
 
-                    guard let result = value as? Result else {
-                        throw validationProvider.transformError(NetworkError.sessionError)
-                    }
-                    return result
+                    return dataResponse
 
-                case .failure(let error):
+                case .failure:
                     logger.log(message: "🚀 taskId: \(taskId): Task finished with error", level: .error)
                     DeduplicatingRequestExecutor.runningRequestTasks[taskId] = nil
-                    throw error
+                    return dataResponse
                 }
             }
-        }
-    }
 
-    /// Executes a closure while catching and transforming failures.
-    ///
-    /// This method provides standardized error handling by:
-    /// - Catching and transforming network errors
-    /// - Handling Alamofire-specific errors
-    /// - Converting errors to the expected failure type
-    ///
-    /// - Parameters:
-    ///   - validationProvider: The provider used to transform any errors.
-    ///   - body: The closure to execute.
-    /// - Returns: The result of type `Result`.
-    /// - Throws: A transformed error if the closure fails.
-    func catchingFailure<Result: NetworkSession.DataType, Failure: Error>(
-        validationProvider: any ValidationProviding<Failure>,
-        body: () async throws -> Result
-    ) async throws(Failure) -> Result {
-        do {
-            return try await body()
-        } catch let networkError as NetworkError {
-            throw validationProvider.transformError(networkError)
-        } catch let error as AFError {
-            if let underlyingError = error.underlyingError as? Failure {
-                throw underlyingError
-            } else if let underlyingError = error.underlyingError as? NetworkError {
-                throw validationProvider.transformError(underlyingError)
-            } else {
-                throw validationProvider.transformError(NetworkError.sessionError)
-            }
-        } catch {
-            throw validationProvider.transformError(NetworkError.sessionError)
-        }
     }
 
 }
