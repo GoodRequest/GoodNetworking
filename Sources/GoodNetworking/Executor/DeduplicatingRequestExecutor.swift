@@ -128,7 +128,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
 
                 let dataResponse = await requestTask.value
                 switch dataResponse.result {
-                case .success(let value):
+                case .success:
                     logger.log(message: "🚀 taskId: \(taskId): Task finished successfully", level: .info)
 
                     if cacheTimeout > 0 {

@@ -282,43 +282,83 @@ public extension NetworkSession {
 
 public extension NetworkSession {
 
-    /// Creates a download request that saves the response to a file.
+    /// Creates a download request that saves the response to a file and provides progress updates.
     ///
     /// This method handles downloading files from a network endpoint and saving them
     /// to the app's documents directory. It supports:
     /// - Custom file naming
     /// - Automatic directory creation
     /// - Previous file removal
+    /// - Progress tracking via AsyncStream
     ///
     /// - Parameters:
     ///   - endpoint: The endpoint to download from
     ///   - baseUrlProvider: Optional override for the base URL provider
     ///   - customFileName: The name to use for the saved file
-    /// - Returns: An Alamofire DownloadRequest instance
+    /// - Returns: An AsyncStream that emits download progress and final URL
     /// - Throws: A NetworkError if the download setup fails
-    func download(
+    func download<Failure: Error>(
         endpoint: Endpoint,
         baseUrlProvider: BaseUrlProviding? = nil,
-        customFileName: String
-    ) async throws(NetworkError) -> DownloadRequest {
-        let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
-        let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
+        customFileName: String,
+        validationProvider: any ValidationProviding<Failure> = DefaultValidationProvider()
+    ) -> AsyncThrowingStream<(progress: Double, url: URL?), Error> {
+        return AsyncThrowingStream { continuation in
+            Task {
+                do {
+                    // Resolve the base URL and session before starting the stream
+                    let resolvedBaseUrl = try await resolveBaseUrl(baseUrlProvider: baseUrlProvider)
+                    let resolvedSession = await resolveSession(sessionProvider: sessionProvider)
 
-        let destination: DownloadRequest.Destination = { temporaryURL, _ in
-            let directoryURLs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-            let url = directoryURLs.first?.appendingPathComponent(customFileName) ?? temporaryURL
+                    // Ensure we can create a valid URL
+                    guard let downloadURL = try? endpoint.url(on: resolvedBaseUrl) else {
+                        continuation.finish(throwing: validationProvider.transformError(NetworkError.invalidBaseURL))
+                        return
+                    }
 
-            return (url, [.removePreviousFile, .createIntermediateDirectories])
+                    // Set up file destination
+                    let destination: DownloadRequest.Destination = { temporaryURL, _ in
+                        let directoryURLs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+                        let url = directoryURLs.first?.appendingPathComponent(customFileName) ?? temporaryURL
+                        return (url, [.removePreviousFile, .createIntermediateDirectories])
+                    }
+
+                    // Start the download
+                    let request = resolvedSession.download(
+                        downloadURL,
+                        method: endpoint.method,
+                        parameters: endpoint.parameters?.dictionary,
+                        encoding: endpoint.encoding,
+                        headers: endpoint.headers,
+                        to: destination
+                    )
+
+                    // Monitor progress
+                    request.downloadProgress { progress in
+                        continuation.yield((progress: progress.fractionCompleted, url: nil))
+                    }
+
+                    // Handle response
+                    request.response { response in
+                        switch response.result {
+                        case .success:
+                            if let destinationURL = response.fileURL {
+                                continuation.yield((progress: 1.0, url: destinationURL))
+                            } else {
+                                continuation.finish(throwing: validationProvider.transformError(.missingRemoteData))
+                            }
+                        case .failure(let error):
+                            continuation.finish(throwing: error)
+                        }
+
+                        continuation.finish()
+                    }
+
+                } catch {
+                    continuation.finish(throwing: validationProvider.transformError(.sessionError))
+                }
+            }
         }
-
-        return resolvedSession.download(
-            try? endpoint.url(on: resolvedBaseUrl),
-            method: endpoint.method,
-            parameters: endpoint.parameters?.dictionary,
-            encoding: endpoint.encoding,
-            headers: endpoint.headers,
-            to: destination
-        )
     }
 
 }
@@ -462,6 +502,39 @@ extension NetworkSession {
             throw validationProvider.transformError(NetworkError.sessionError)
         }
     }
+    //
+    //    /// Executes code with standardized error handling.
+    //    ///
+    //    /// This method provides consistent error handling by:
+    //    /// - Catching and transforming network errors
+    //    /// - Handling Alamofire-specific errors
+    //    /// - Converting errors to the expected failure type
+    //    ///
+    //    /// - Parameters:
+    //    ///   - validationProvider: Provider for error transformation
+    //    ///   - body: The code to execute
+    //    /// - Returns: The result of type Result
+    //    /// - Throws: A transformed error matching the Failure type
+    //    func catchingFailureDownloadStream<Failure: Error>(
+    //        validationProvider: any ValidationProviding<Failure>,
+    //        body: () async -> AsyncThrowingStream<(progress: Double, url: URL?), Failure>
+    //    ) async -> AsyncThrowingStream<(progress: Double, url: URL?), Failure> {
+    //        do {
+    //            return try await body()
+    //        } catch let networkError as NetworkError {
+    //            throw validationProvider.transformError(networkError)
+    //        } catch let error as AFError {
+    //            if let underlyingError = error.underlyingError as? Failure {
+    //                throw underlyingError
+    //            } else if let underlyingError = error.underlyingError as? NetworkError {
+    //                throw validationProvider.transformError(underlyingError)
+    //            } else {
+    //                throw validationProvider.transformError(NetworkError.sessionError)
+    //            }
+    //        } catch {
+    //            throw validationProvider.transformError(NetworkError.sessionError)
+    //        }
+    //    }
 
     /// Executes code with standardized error handling.
     ///
