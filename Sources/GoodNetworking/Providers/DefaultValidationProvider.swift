@@ -35,7 +35,7 @@ public struct DefaultValidationProvider: ValidationProviding {
     ///   - statusCode: The HTTP status code from the network response.
     ///   - data: The data received from the network response.
     /// - Throws: A `NetworkError.remote` if the status code indicates a failure (outside the 200-299 range).
-    public func validate(statusCode: Int, data: Data) throws(Failure) {
+    public func validate(statusCode: Int, data: Data?) throws(Failure) {
         if statusCode < 200 || statusCode >= 300 {
             throw NetworkError.remote(statusCode: statusCode, data: data)
         }

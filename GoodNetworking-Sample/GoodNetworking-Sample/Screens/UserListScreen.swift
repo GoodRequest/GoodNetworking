@@ -37,7 +37,7 @@ struct UserListScreen: View {
                     Label("Create new", systemImage: "plus")
                 }
             } footer: {
-                ResourcePager(resource: users)
+                Pager(resource: users)
                     .frame(maxWidth: .infinity)
                     .padding()
             }

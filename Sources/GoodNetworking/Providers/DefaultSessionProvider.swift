@@ -32,18 +32,12 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     /// A private property that provides the appropriate logger based on the iOS version.
     ///
     /// For iOS 14 and later, it uses `OSLogLogger`. For earlier versions, it defaults to `PrintLogger`.
-    private var logger: GoodLogger {
-        if #available(iOS 14, *) {
-            return OSLogLogger()
-        } else {
-            return PrintLogger()
-        }
-    }
+    var logger: GoodLogger?
 
     /// Initializes the session provider with a network session configuration.
     ///
     /// - Parameter configuration: The configuration used to create network sessions.
-    public init(configuration: NetworkSessionConfiguration) {
+    public init(configuration: NetworkSessionConfiguration, logger: GoodLogger? = nil) {
         self.configuration = configuration
         self.currentSession = Alamofire.Session(
             configuration: configuration.urlSessionConfiguration,
@@ -51,12 +45,14 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
             serverTrustManager: configuration.serverTrustManager,
             eventMonitors: configuration.eventMonitors
         )
+
+        self.logger = logger
     }
 
     /// Initializes the session provider with an existing `Alamofire.Session`.
     ///
     /// - Parameter session: An existing session that will be used by this provider.
-    public init(session: Alamofire.Session) {
+    public init(session: Alamofire.Session, logger: GoodLogger? = nil) {
         self.currentSession = session
         self.configuration = NetworkSessionConfiguration(
             urlSessionConfiguration: session.sessionConfiguration,
@@ -64,6 +60,8 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
             serverTrustManager: session.serverTrustManager,
             eventMonitors: [session.eventMonitor]
         )
+
+        self.logger = logger
     }
 
     /// A Boolean value indicating that the session is always valid.
@@ -73,7 +71,7 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     ///
     /// - Returns: `true`, indicating the session is valid.
     public var isSessionValid: Bool {
-        logger.log(
+        logger?.log(
             message: "✅ Default session is always valid",
             level: .debug
         )
@@ -84,7 +82,7 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     ///
     /// Since the default session does not support invalidation, this method simply logs a message without performing any action.
     public func invalidateSession() async {
-        logger.log(
+        logger?.log(
             message: "❌ Default session cannot be invalidated",
             level: .debug
         )
@@ -97,7 +95,7 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     ///
     /// - Returns: A new instance of `Alamofire.Session`.
     public func makeSession() async -> Alamofire.Session {
-        logger.log(
+        logger?.log(
             message: "❌ Default Session Provider cannot be create a new Session, it's setup in the initializer",
             level: .debug
         )
@@ -112,7 +110,7 @@ public actor DefaultSessionProvider: NetworkSessionProviding {
     ///
     /// - Returns: The current or newly created `Alamofire.Session`.
     public func resolveSession() async -> Alamofire.Session {
-        logger.log(
+        logger?.log(
             message: "❌ Default session provider always resolves current session which is setup in the initializer",
             level: .debug
         )

@@ -27,7 +27,7 @@ public protocol ValidationProviding<Failure>: Sendable where Failure: Error {
     ///   - statusCode: The HTTP status code from the network response.
     ///   - data: The data received from the network response.
     /// - Throws: A `Failure` error if the validation fails.
-    func validate(statusCode: Int, data: Data) throws(Failure)
+    func validate(statusCode: Int, data: Data?) throws(Failure)
 
     /// Transforms a general `NetworkError` into a specific error of type `Failure`.
     ///

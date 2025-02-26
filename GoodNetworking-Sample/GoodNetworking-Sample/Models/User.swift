@@ -32,7 +32,7 @@ struct UserRequest: Encodable {
 
 // MARK: - Read response
 
-struct UserResponse: Decodable, WithCustomDecoder {
+struct UserResponse: Codable, WithCustomDecoder, Equatable {
 
     static let keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .convertFromSnakeCase
 
@@ -98,7 +98,7 @@ struct RemoteUser: Readable {
         return UserRequest(id: resource.id)
     }
 
-    nonisolated static func resource(from response: ReadResponse) throws(NetworkError) -> Resource {
+    nonisolated static func resource(from response: ReadResponse, updating resource: Resource?) throws(NetworkError) -> Resource {
         response.data
     }
 
@@ -113,11 +113,15 @@ extension RemoteUser: Listable {
         SampleEndpoint.listUsers(page: request.page)
     }
 
-    nonisolated static func firstPageRequest() -> ListRequest {
+    nonisolated static func firstPageRequest(withParameters: Any?) -> UserListRequest {
         ListRequest(page: 1)
     }
 
-    nonisolated static func nextPageRequest(currentResource: [User], lastResponse: UserListResponse) -> UserListRequest? {
+    nonisolated static func nextPageRequest(
+        currentResource: [User],
+        parameters: Any?,
+        lastResponse: UserListResponse
+    ) -> UserListRequest? {
         print(lastResponse.page, "/", lastResponse.totalPages)
         if lastResponse.totalPages > lastResponse.page {
             return UserListRequest(page: lastResponse.page + 1)
