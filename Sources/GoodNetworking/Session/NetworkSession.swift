@@ -82,7 +82,7 @@ public actor NetworkSession: Hashable {
     ///   - sessionProvider: A provider for managing the network session. Defaults to a standard configuration.
     public init(
         baseUrlProvider: BaseUrlProviding? = nil,
-        sessionProvider: NetworkSessionProviding = DefaultSessionProvider(configuration: .default)
+        sessionProvider: NetworkSessionProviding = DefaultSessionProvider(configuration: .default())
     ) {
         self.baseUrlProvider = baseUrlProvider
         self.sessionProvider = sessionProvider
@@ -97,10 +97,11 @@ public actor NetworkSession: Hashable {
     ///   - configuration: The configuration to use for the session. Defaults to `.default`.
     public init(
         baseUrl: BaseUrlProviding? = nil,
-        configuration: NetworkSessionConfiguration = .default
+        configuration: NetworkSessionConfiguration = .default(),
+        logger: NetworkLogger? = nil
     ) {
         self.baseUrlProvider = baseUrl
-        self.sessionProvider = DefaultSessionProvider(configuration: configuration)
+        self.sessionProvider = DefaultSessionProvider(configuration: configuration, logger: logger)
     }
 
     /// Creates a new NetworkSession with an existing Alamofire session.

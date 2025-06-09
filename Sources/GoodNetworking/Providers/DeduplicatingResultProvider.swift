@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import GoodLogger
 
 /// A protocol for providing results asynchronously.
 ///
@@ -21,20 +20,13 @@ public actor DeduplicatingResultProvider: ResultProviding, Sendable {
     private let cacheTimeout: TimeInterval
     private var shouldUpdateOnStore: Bool = false
 
-    /// A private property that provides the appropriate logger based on the iOS version.
-    ///
-    /// For iOS 14 and later, it uses `OSLogLogger`. For earlier versions, it defaults to `PrintLogger`.
-    private var logger: GoodLogger {
-        if #available(iOS 14, *) {
-            return OSLogLogger(logMetaData: false)
-        } else {
-            return PrintLogger(logMetaData: false)
-        }
-    }
+    /// A private property that provides the logger
+    private var logger: NetworkLogger?
 
-    public init(taskId: String, cacheTimeout: TimeInterval = 6) {
+    public init(taskId: String, cacheTimeout: TimeInterval = 6, logger: NetworkLogger?) {
         self.taskId = taskId
         self.cacheTimeout = cacheTimeout
+        self.logger = logger
     }
 
     /// Generates a unique cache key using the endpoint and taskId
@@ -55,9 +47,9 @@ public actor DeduplicatingResultProvider: ResultProviding, Sendable {
         if shouldUpdateOnStore {
             shouldUpdateOnStore = false
             Self.cache[key] = (value: result, finishDate: Date())
-            logger.log(message: "Value updated for \(key)")
+            logger?.logNetworkEvent(message: "Value updated for \(key)", level: .info, fileName: #file, lineNumber: #line)
         } else {
-            logger.log(message: print("Already cached \(key)"))
+            logger?.logNetworkEvent(message: "Already cached \(key)", level: .info, fileName: #file, lineNumber: #line)
         }
     }
 
@@ -71,7 +63,7 @@ public actor DeduplicatingResultProvider: ResultProviding, Sendable {
 
         // Return cached response if available and valid
         if isCacheValid(for: key), let cachedValue = Self.cache[key]?.value as? Result {
-            logger.log(message: "Cache hit for \(key)")
+            logger?.logNetworkEvent(message: "Cache hit for \(key)", level: .info, fileName: #file, lineNumber: #line)
             return cachedValue
         } else {
             shouldUpdateOnStore = true
