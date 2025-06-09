@@ -7,7 +7,6 @@
 
 @preconcurrency import Alamofire
 import Combine
-import GoodLogger
 import Foundation
 
 public struct LoggingEventMonitor: EventMonitor, Sendable {
@@ -25,9 +24,12 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
 
     }
 
-    private let logger: (any GoodLogger)?
+    private let logger: NetworkLogger
 
-    public init(logger: (any GoodLogger)?) {
+    /// Creates a new logging monitor.
+    ///
+    /// - Parameter logger: The logger instance to use for output. If nil, no logging occurs.
+    public init(logger: NetworkLogger, configuration: Configuration = .init()) {
         self.logger = logger
     }
 
@@ -57,9 +59,9 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
 
         switch response.result {
         case .success:
-            logger?.log(message: logMessage, level: .debug)
+            logger.logNetworkEvent(message: logMessage, level: .debug, fileName: #file, lineNumber: #line)
         case .failure:
-            logger?.log(message: logMessage, level: .fault)
+            logger.logNetworkEvent(message: logMessage, level: .error, fileName: #file, lineNumber: #line)
         }
     }
 

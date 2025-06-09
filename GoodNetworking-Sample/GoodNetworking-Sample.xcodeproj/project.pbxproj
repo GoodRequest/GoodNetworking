@@ -17,6 +17,7 @@
 		09A9ECA12C48115A0032C359 /* GoodSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 09A9ECA02C48115A0032C359 /* GoodSwiftUI */; };
 		09A9ECA32C4811B00032C359 /* UserListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9ECA22C4811B00032C359 /* UserListScreen.swift */; };
 		09A9ECAE2C4AC9810032C359 /* JobUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9ECAD2C4AC9810032C359 /* JobUser.swift */; };
+		3F8799A12DF703B000B4286B /* SampleLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F8799A02DF703B000B4286B /* SampleLogger.swift */; };
 		5D4200142CBEE7ED006C4292 /* UserDefaultsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4200132CBEE7ED006C4292 /* UserDefaultsExtensions.swift */; };
 		5D4200192CBF97CC006C4292 /* ServerPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4200182CBF97CC006C4292 /* ServerPickerView.swift */; };
 		5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967B299C190B00DFAEAE /* GoodNetworking */; };
@@ -35,6 +36,7 @@
 		09A9EC992C48015C0032C359 /* SampleEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleEndpoint.swift; sourceTree = "<group>"; };
 		09A9ECA22C4811B00032C359 /* UserListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserListScreen.swift; sourceTree = "<group>"; };
 		09A9ECAD2C4AC9810032C359 /* JobUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobUser.swift; sourceTree = "<group>"; };
+		3F8799A02DF703B000B4286B /* SampleLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleLogger.swift; sourceTree = "<group>"; };
 		5D4200132CBEE7ED006C4292 /* UserDefaultsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtensions.swift; sourceTree = "<group>"; };
 		5D4200182CBF97CC006C4292 /* ServerPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerPickerView.swift; sourceTree = "<group>"; };
 		5D4A967A299C18FB00DFAEAE /* GoodNetworking */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = GoodNetworking; path = ..; sourceTree = "<group>"; };
@@ -91,6 +93,7 @@
 				09A9EC942C4800B90032C359 /* SampleNetworkSessions.swift */,
 				09A9EC992C48015C0032C359 /* SampleEndpoint.swift */,
 				5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */,
+				3F8799A02DF703B000B4286B /* SampleLogger.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -240,6 +243,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				09A9ECA32C4811B00032C359 /* UserListScreen.swift in Sources */,
+				3F8799A12DF703B000B4286B /* SampleLogger.swift in Sources */,
 				09A9EC9A2C48015C0032C359 /* SampleEndpoint.swift in Sources */,
 				09A9EC8F2C47FF8E0032C359 /* UserScreen.swift in Sources */,
 				EACEC3FA29953DCB008242AA /* AppDelegate.swift in Sources */,

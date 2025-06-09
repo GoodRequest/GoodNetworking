@@ -7,7 +7,6 @@
 
 import Alamofire
 import SwiftUI
-import GoodLogger
 
 // MARK: - Resource
 
@@ -27,6 +26,7 @@ public struct RawResponse: Sendable {
     private var session: FutureSession
     private var rawResponse: RawResponse = RawResponse()
     private var remote: R.Type
+    private let logger: NetworkLogger?
 
     private(set) public var state: ResourceState<R.Resource, NetworkError>
     private var listState: ResourceState<[R.Resource], NetworkError>
@@ -50,10 +50,12 @@ public struct RawResponse: Sendable {
     public init(
         wrappedValue: R.Resource? = nil,
         session: NetworkSession,
-        remote: R.Type
+        remote: R.Type,
+        logger: NetworkLogger? = nil
     ) {
         self.session = FutureSession { session }
         self.remote = remote
+        self.logger = logger
 
         if let wrappedValue {
             self.state = .available(wrappedValue)
@@ -66,10 +68,12 @@ public struct RawResponse: Sendable {
 
     public init(
         session: FutureSession? = nil,
-        remote: R.Type
+        remote: R.Type,
+        logger: NetworkLogger? = nil
     ) {
         self.session = session ?? .placeholder
         self.remote = remote
+        self.logger = logger
         self.state = .idle
         self.listState = .idle
     }
@@ -106,38 +110,30 @@ public struct RawResponse: Sendable {
 @available(iOS 17.0, *)
 extension Resource {
 
-    private var logger: GoodLogger {
-        if #available(iOS 14, *) {
-            return OSLogLogger()
-        } else {
-            return PrintLogger()
-        }
-    }
-
     public func create() async throws {
-        logger.log(level: .error, message: "CREATE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger?.logNetworkEvent(message: "CREATE operation not defined for resource \(String(describing: R.self))", level: .error, fileName: #file, lineNumber: #line)
     }
 
     public func read(forceReload: Bool = false) async throws {
-        logger.log(level: .error, message: "READ operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger?.logNetworkEvent(message: "READ operation not defined for resource \(String(describing: R.self))", level: .error, fileName: #file, lineNumber: #line)
     }
 
     public func updateRemote() async throws {
-        logger.log(level: .error, message: "UPDATE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger?.logNetworkEvent(message: "UPDATE operation not defined for resource \(String(describing: R.self))", level: .error, fileName: #file, lineNumber: #line)
     }
 
     public func delete() async throws {
-        logger.log(level: .error, message: "DELETE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger?.logNetworkEvent(message: "DELETE operation not defined for resource \(String(describing: R.self))", level: .error, fileName: #file, lineNumber: #line)
     }
 
     public func firstPage(parameters: Any? = nil, forceReload: Bool = false) async throws {
-        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))", privacy: .auto)
-        logger.log(level: .error, message: "Check type of parameters passed to this resource.", privacy: .auto)
-        logger.log(level: .error, message: "Current parameters type: \(type(of: parameters))", privacy: .auto)
+        logger?.logNetworkEvent(message: "LIST operation not defined for resource \(String(describing: R.self))", level: .error, fileName: #file, lineNumber: #line)
+        logger?.logNetworkEvent(message: "Check type of parameters passed to this resource.", level: .error, fileName: #file, lineNumber: #line)
+        logger?.logNetworkEvent(message: "Current parameters type: \(type(of: parameters))", level: .error, fileName: #file, lineNumber: #line)
     }
 
     public func nextPage() async throws {
-        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger?.logNetworkEvent(message: "LIST operation not defined for resource \(String(describing: R.self))", level: .error, fileName: #file, lineNumber: #line)
     }
 
 }
@@ -149,7 +145,8 @@ extension Resource where R: Creatable {
 
     public func create() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(level: .error, message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.", privacy: .auto)
+            logger?.logNetworkEvent(message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.", level: .error, fileName: #file, lineNumber: #line)
+            return
         }
         try await create(request: request)
     }
@@ -203,7 +200,13 @@ extension Resource where R: Readable {
         let resource = state.value
         guard let request = try R.request(from: resource) else {
             self.state = .idle
-            return logger.log(level: .error, message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.", privacy: .auto)
+             logger?.logNetworkEvent(
+                message: "Reading nil resource always fails! Use read(request:) with a custom request or supply a resource to read from.",
+                level: .error,
+                fileName: #file,
+                lineNumber: #line
+            )
+            return
         }
 
         try await read(request: request, forceReload: forceReload)
@@ -211,7 +214,8 @@ extension Resource where R: Readable {
 
     public func read(request: R.ReadRequest, forceReload: Bool = false) async throws {
         guard !state.isAvailable || forceReload else {
-            return logger.log(level: .info, message: "Skipping read - value already exists", privacy: .auto)
+            logger?.logNetworkEvent(message: "Skipping read - value already exists", level: .info, fileName: #file, lineNumber: #line)
+            return
         }
 
         let resource = state.value
@@ -254,7 +258,8 @@ extension Resource where R: Updatable {
 
     public func updateRemote() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(level: .error, message: "Updating resource to nil always fails! Use DELETE instead.", privacy: .auto)
+            logger?.logNetworkEvent(message: "Updating resource to nil always fails! Use DELETE instead.", level: .error, fileName: #file, lineNumber: #line)
+            return
         }
         try await updateRemote(request: request)
     }
@@ -305,7 +310,8 @@ extension Resource where R: Deletable {
 
     public func delete() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger.log(level: .error, message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.", privacy: .auto)
+            logger?.logNetworkEvent(message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.", level: .error, fileName: #file, lineNumber: #line)
+            return
         }
         try await delete(request: request)
     }
