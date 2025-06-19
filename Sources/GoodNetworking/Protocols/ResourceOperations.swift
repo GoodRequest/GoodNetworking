@@ -22,7 +22,7 @@ public protocol Creatable: RemoteResource {
     associatedtype CreateRequest: Sendable
 
     /// The type of response returned after the resource is created.
-    associatedtype CreateResponse: NetworkSession.DataType
+    associatedtype CreateResponse: Decodable & Sendable
 
     /// Creates a new resource on the remote server using the provided session and request data.
     ///
@@ -130,7 +130,7 @@ public protocol Readable: RemoteResource {
     associatedtype ReadRequest: Sendable
 
     /// The type of response returned after reading the resource.
-    associatedtype ReadResponse: NetworkSession.DataType
+    associatedtype ReadResponse: Decodable & Sendable
 
     /// Reads the resource from the remote server using the provided session and request data.
     ///
@@ -295,7 +295,7 @@ public protocol Updatable: Readable {
     associatedtype UpdateRequest: Sendable
 
     /// The type of response returned after updating the resource.
-    associatedtype UpdateResponse: NetworkSession.DataType
+    associatedtype UpdateResponse: Decodable & Sendable
 
     /// Updates an existing resource on the remote server using the provided session and request data.
     ///
@@ -385,7 +385,7 @@ public protocol Deletable: Readable {
     associatedtype DeleteRequest: Sendable
 
     /// The type of response returned after deleting the resource.
-    associatedtype DeleteResponse: NetworkSession.DataType
+    associatedtype DeleteResponse: Decodable & Sendable
 
     /// Deletes the resource on the remote server using the provided session and request data.
     ///
@@ -483,7 +483,7 @@ public protocol Listable: RemoteResource {
     associatedtype ListRequest: Sendable
 
     /// The type of response returned after listing the resources.
-    associatedtype ListResponse: NetworkSession.DataType
+    associatedtype ListResponse: Decodable & Sendable
 
     /// Lists the resources from the remote server using the provided session and request data.
     ///

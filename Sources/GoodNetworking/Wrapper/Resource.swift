@@ -115,59 +115,29 @@ extension Resource {
     }
 
     public func create() async throws {
-        logger
-            .log(
-                message: "CREATE operation not defined for resource \(String(describing: R.self))",
-                level: .error,
-                privacy: .auto
-            )
+        logger.log(level: .error, message: "CREATE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
     public func read(forceReload: Bool = false) async throws {
-        logger
-            .log(
-                message: "READ operation not defined for resource \(String(describing: R.self))",
-                level: .error,
-                privacy: .auto
-            )
+        logger.log(level: .error, message: "READ operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
     public func updateRemote() async throws {
-        logger
-            .log(
-                message: "UPDATE operation not defined for resource \(String(describing: R.self))",
-                level: .error,
-                privacy: .auto
-            )
+        logger.log(level: .error, message: "UPDATE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
     public func delete() async throws {
-        logger
-            .log(
-                message: "DELETE operation not defined for resource \(String(describing: R.self))",
-                level: .error,
-                privacy: .auto
-            )
+        logger.log(level: .error, message: "DELETE operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
     public func firstPage(parameters: Any? = nil, forceReload: Bool = false) async throws {
-        logger
-            .log(
-                message: "LIST operation not defined for resource \(String(describing: R.self))",
-                level: .error,
-                privacy: .auto
-            )
-        logger.log(message: "Check type of parameters passed to this resource.", level: .error, privacy: .auto)
-        logger.log(message: "Current parameters type: \(type(of: parameters))", level: .error, privacy: .auto)
+        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))", privacy: .auto)
+        logger.log(level: .error, message: "Check type of parameters passed to this resource.", privacy: .auto)
+        logger.log(level: .error, message: "Current parameters type: \(type(of: parameters))", privacy: .auto)
     }
 
     public func nextPage() async throws {
-        logger
-            .log(
-                message: "LIST operation not defined for resource \(String(describing: R.self))",
-                level: .error,
-                privacy: .auto
-            )
+        logger.log(level: .error, message: "LIST operation not defined for resource \(String(describing: R.self))", privacy: .auto)
     }
 
 }
@@ -179,11 +149,7 @@ extension Resource where R: Creatable {
 
     public func create() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger
-                .log(
-                    message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.",
-                    level: .error
-                )
+            return logger.log(level: .error, message: "Creating nil resource always fails! Use create(request:) with a custom request or supply a resource to create.", privacy: .auto)
         }
         try await create(request: request)
     }
@@ -237,11 +203,7 @@ extension Resource where R: Readable {
         let resource = state.value
         guard let request = try R.request(from: resource) else {
             self.state = .idle
-            return logger
-                .log(
-                    message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.",
-                    level: .error
-                )
+            return logger.log(level: .error, message: "Requesting nil resource always fails! Use read(request:forceReload:) with a custom request or supply a resource to read.", privacy: .auto)
         }
 
         try await read(request: request, forceReload: forceReload)
@@ -249,7 +211,7 @@ extension Resource where R: Readable {
 
     public func read(request: R.ReadRequest, forceReload: Bool = false) async throws {
         guard !state.isAvailable || forceReload else {
-            return logger.log(message: "Skipping read - value already exists", level: .info, privacy: .auto)
+            return logger.log(level: .info, message: "Skipping read - value already exists", privacy: .auto)
         }
 
         let resource = state.value
@@ -292,11 +254,7 @@ extension Resource where R: Updatable {
 
     public func updateRemote() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger
-                .log(
-                    message: "Updating resource to nil always fails! Use DELETE instead.",
-                    level: .error
-                )
+            return logger.log(level: .error, message: "Updating resource to nil always fails! Use DELETE instead.", privacy: .auto)
         }
         try await updateRemote(request: request)
     }
@@ -347,11 +305,7 @@ extension Resource where R: Deletable {
 
     public func delete() async throws {
         guard let request = try R.request(from: state.value) else {
-            return logger
-                .log(
-                    message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.",
-                    level: .error
-                )
+            return logger.log(level: .error, message: "Deleting nil resource always fails. Use delete(request:) with a custom request or supply a resource to delete.", privacy: .auto)
         }
         try await delete(request: request)
     }

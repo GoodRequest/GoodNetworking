@@ -10,7 +10,7 @@ import Foundation
 public enum NetworkError: LocalizedError, Hashable {
 
     case endpoint(EndpointError)
-    case remote(statusCode: Int, data: Data?)
+    case remote(statusCode: Int, data: Data)
     case paging(PagingError)
     case missingLocalData
     case missingRemoteData
@@ -56,7 +56,7 @@ public enum NetworkError: LocalizedError, Hashable {
 
     func remoteError<E: Error & Decodable>(as errorType: E.Type) -> E? {
         if case let .remote(_, data) = self {
-            return try? JSONDecoder().decode(errorType, from: data ?? Data())
+            return try? JSONDecoder().decode(errorType, from: data)
         } else {
             return nil
         }

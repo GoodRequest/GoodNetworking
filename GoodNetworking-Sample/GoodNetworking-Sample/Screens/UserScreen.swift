@@ -10,7 +10,7 @@ import GRAsyncImage
 import SwiftUI
 
 struct UserScreen: View {
-
+    
     // MARK: - State
 
     @State private var user = Resource(session: .sampleSession, remote: RemoteUser.self)
@@ -96,5 +96,5 @@ struct UserScreen: View {
 #Preview {
 
     UserScreen(userId: 1)
-
+    
 }

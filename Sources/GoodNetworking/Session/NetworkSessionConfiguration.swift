@@ -54,9 +54,9 @@ public struct NetworkSessionConfiguration: Sendable {
         var eventMonitors: [EventMonitor] = []
 
         if #available(iOS 14, *) {
-            eventMonitors.append(LoggingEventMonitor(logger: OSLogLogger(logMetaData: false)))
+            eventMonitors.append(LoggingEventMonitor(logger: OSLogLogger()))
         } else {
-            eventMonitors.append(LoggingEventMonitor(logger: PrintLogger(logMetaData: false)))
+            eventMonitors.append(LoggingEventMonitor(logger: PrintLogger()))
         }
 
         return NetworkSessionConfiguration(

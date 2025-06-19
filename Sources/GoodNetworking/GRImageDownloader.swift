@@ -9,6 +9,7 @@ import Foundation
 import AlamofireImage
 import Alamofire
 
+#if swift(<6.2)
 /// The GRImageDownloader class provides a setup method for configuring and creating an instance of an ImageDownloader.
 public actor GRImageDownloader {
 
@@ -78,3 +79,4 @@ public actor GRImageDownloader {
     }
 
 }
+#endif // swift(<6.2)

@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GoodRequest/GoodExtensions-iOS.git",
       "state" : {
-        "revision" : "d06f82844f041c6d8d1462753c9ce6bb069ec976",
-        "version" : "2.0.2"
+        "revision" : "dd6fe6484a87f4ccde73136d491b2339e2a3ab98",
+        "version" : "2.0.0"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/GoodRequest/GoodSwiftUI.git",
       "state" : {
-        "revision" : "e8fcc5573a9f697e5c28917108cabfa43f968c45",
-        "version" : "1.4.0"
+        "revision" : "97f65963cd984a53b83f7715d5b64edfce88dec9",
+        "version" : "1.2.0"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-syntax.git",
       "state" : {
-        "revision" : "0687f71944021d616d34d922343dcef086855920",
-        "version" : "600.0.1"
+        "revision" : "515f79b522918f83483068d99c68daeb5116342d",
+        "version" : "600.0.0-prerelease-2024-09-04"
       }
     }
   ],
