@@ -278,5 +278,31 @@ struct RemoteUser: Readable {
 ```
 And voila, all is setup. You can update the user directly with a state variable. The library also support all the CRUD operations with protocols `Creatable`, `Readable`, `Updatable`, `Deletable` and also more like `Listable` for pagination of lists. 
 
+## Logging
+```swift
+struct SampleLogger: NetworkLogger {
+
+    func logNetworkEvent(message: Any, level: LogLevel, fileName: String, lineNumber: Int) {
+        switch level {
+        case .debug:
+            print("[DEBUG] \(fileName):\(lineNumber) - \(message)")
+        case .info:
+            print("[INFO] \(fileName):\(lineNumber) - \(message)")
+        case .warning:
+            print("[WARNING] \(fileName):\(lineNumber) - \(message)")
+        case .error:
+            print("[ERROR] \(fileName):\(lineNumber) - \(message)")
+        }
+    }
+
+}
+
+NetworkSession.sampleSession = NetworkSession(
+    baseUrl: urlProvider,
+    configuration: .default(logger: SampleLogger()),
+    logger: SampleLogger()
+)
+```
+
 ## License
 GoodNetworking is released under the MIT license. See [LICENSE](LICENSE.md) for details.

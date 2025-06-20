@@ -40,7 +40,7 @@ public actor GRImageDownloader {
     ///   - sessionConfiguration: The GRSessionConfiguration used to create the URLSession and Session. (default: .default)
     ///   - downloaderConfiguration: The GRImageDownloaderConfiguration used to set the max concurrent operation count and max active downloads.
     static func setupAuthorizedImageDownloader(
-        sessionConfiguration: NetworkSessionConfiguration = .default,
+        sessionConfiguration: NetworkSessionConfiguration = .default(),
         downloaderConfiguration: GRImageDownloaderConfiguration
     ) {
         let imageDownloaderQueue = DispatchQueue(label: C.imageDownloaderDispatchQueueKey)

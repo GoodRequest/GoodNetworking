@@ -7,7 +7,6 @@
 
 @preconcurrency import Alamofire
 import Foundation
-import GoodLogger
 
 /// NetworkSessionConfiguration represents the configuration used to create a NetworkSession object.
 public struct NetworkSessionConfiguration: Sendable {
@@ -50,15 +49,13 @@ public struct NetworkSessionConfiguration: Sendable {
     // MARK: - Static
 
     /// The default configuration for a `GRSession` object.
-    public static var `default`: NetworkSessionConfiguration {
+    public static func `default`(logger: (any NetworkLogger)? = nil) -> NetworkSessionConfiguration {
         var eventMonitors: [EventMonitor] = []
 
-        if #available(iOS 14, *) {
-            eventMonitors.append(LoggingEventMonitor(logger: OSLogLogger(logMetaData: false)))
-        } else {
-            eventMonitors.append(LoggingEventMonitor(logger: PrintLogger(logMetaData: false)))
+        if let logger {
+            eventMonitors.append(LoggingEventMonitor(logger: logger))
         }
-
+        
         return NetworkSessionConfiguration(
             urlSessionConfiguration: .default,
             interceptor: nil,
