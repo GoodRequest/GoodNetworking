@@ -1,24 +1,6 @@
 {
-  "originHash" : "40119152ad89596efc6986f44ce1dc0a1bc0e0eb765f23d639911bd31163169e",
+  "originHash" : "8eab421ee15e57c7b5a7c27243f361840c5e4ea94e8da3381f3024ef5ec78977",
   "pins" : [
-    {
-      "identity" : "alamofire",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Alamofire/Alamofire.git",
-      "state" : {
-        "revision" : "ea6a94b7dddffd0ca4d0f29252d95310b84dec84",
-        "version" : "5.10.0"
-      }
-    },
-    {
-      "identity" : "alamofireimage",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Alamofire/AlamofireImage.git",
-      "state" : {
-        "revision" : "1eaf3b6c6882bed10f6e7b119665599dd2329aa1",
-        "version" : "4.3.0"
-      }
-    },
     {
       "identity" : "chronometer",
       "kind" : "remoteSourceControl",

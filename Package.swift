@@ -21,9 +21,7 @@ let package = Package(
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMajor(from: "5.10.0")),
-        .package(url: "https://github.com/Alamofire/AlamofireImage.git", .upToNextMajor(from: "4.2.0")),
-        .package(url: "https://github.com/KittyMac/Sextant.git", .upToNextMinor(from: "0.4.31")),
+        .package(url: "https://github.com/KittyMac/Sextant.git", .upToNextMinor(from: "0.4.31"))
     ],
     targets: [
         // Targets are the basic building blocks of a package. A target can define a module or a test suite.
@@ -31,8 +29,6 @@ let package = Package(
         .target(
             name: "GoodNetworking",
             dependencies: [
-                .product(name: "Alamofire", package: "Alamofire"),
-                .product(name: "AlamofireImage", package: "AlamofireImage"),
                 .product(name: "Sextant", package: "Sextant")
             ],
             path: "./Sources/GoodNetworking",

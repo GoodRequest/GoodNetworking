@@ -7,56 +7,32 @@
 
 import Foundation
 
+extension URLError {
+
+    func asNetworkError() -> NetworkError {
+        return NetworkError.local(self)
+    }
+
+}
+
 public enum NetworkError: LocalizedError, Hashable {
 
-    case endpoint(EndpointError)
-    case remote(statusCode: Int, data: Data)
-    case paging(PagingError)
-    case missingLocalData
-    case missingRemoteData
-    case sessionError
-    case invalidBaseURL
-    case cancelled
+    case local(URLError)
+    case remote(HTTPError)
 
     public var errorDescription: String? {
         switch self {
-        case .endpoint(let endpointError):
-            return endpointError.errorDescription
+        case .local(let urlError):
+            return ""
 
-        case .remote(let statusCode, _):
-            return "HTTP \(statusCode) - \(HTTPURLResponse.localizedString(forStatusCode: statusCode))"
-
-        case .paging(let pagingError):
-            return pagingError.errorDescription
-
-        case .missingLocalData:
-            return "Missing data - Failed to map local resource to remote type"
-
-        case .missingRemoteData:
-            return "Missing data - Failed to map remote resource to local type"
-
-        case .sessionError:
-            return "Internal session error"
-
-        case .invalidBaseURL:
-            return "Resolved server base URL is invalid"
-
-        case .cancelled:
-            return "Operation cancelled"
+        case .remote(let httpError):
+            return httpError.localizedDescription
         }
     }
 
-    var statusCode: Int? {
-        if case let .remote(statusCode, _) = self {
-            return statusCode
-        } else {
-            return nil
-        }
-    }
-
-    func remoteError<E: Error & Decodable>(as errorType: E.Type) -> E? {
-        if case let .remote(_, data) = self {
-            return try? JSONDecoder().decode(errorType, from: data)
+    public var httpStatusCode: Int? {
+        if case .remote(let httpError) = self {
+            return httpError.statusCode
         } else {
             return nil
         }
@@ -64,19 +40,22 @@ public enum NetworkError: LocalizedError, Hashable {
 
 }
 
-public enum EndpointError: LocalizedError {
+public struct HTTPError: LocalizedError, Hashable {
 
-    case noSuchEndpoint
-    case operationNotSupported
+    public let statusCode: Int
+    public let errorResponse: Data
 
     public var errorDescription: String? {
-        switch self {
-        case .noSuchEndpoint:
-            return "No such endpoint"
+        return "HTTP \(statusCode) - \(HTTPURLResponse.localizedString(forStatusCode: statusCode))"
+    }
 
-        case .operationNotSupported:
-            return "Operation not supported"
-        }
+    public init(statusCode: Int, errorResponse: Data) {
+        self.statusCode = statusCode
+        self.errorResponse = errorResponse
+    }
+
+    public func remoteError<E: Error & Decodable>(as errorType: E.Type) -> E? {
+        return try? JSONDecoder().decode(errorType, from: errorResponse)
     }
 
 }

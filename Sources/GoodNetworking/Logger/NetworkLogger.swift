@@ -8,19 +8,22 @@
 import Foundation
 
 public enum LogLevel: String, CaseIterable {
+
     case debug
     case info
     case warning
     case error
+
 }
 
 public protocol NetworkLogger: Sendable {
+
     /// Logs the given message with a specific log level, file name, and line number.
-    func logNetworkEvent(
+    nonisolated func logNetworkEvent(
         message: Any,
         level: LogLevel,
-        fileName: String,
-        lineNumber: Int
+        file: String,
+        line: Int
     )
+
 }
- 

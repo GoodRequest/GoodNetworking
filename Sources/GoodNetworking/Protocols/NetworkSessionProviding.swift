@@ -5,8 +5,6 @@
 //  Created by Andrej Jasso on 30/09/2024.
 //
 
-import Alamofire
-
 /// A protocol for managing network sessions used in network requests.
 ///
 /// `NetworkSessionProviding` defines the methods and properties required to handle session creation, validation, and invalidation
@@ -30,7 +28,7 @@ public protocol NetworkSessionProviding: Sendable {
     /// This method is responsible for creating a fresh instance of `Alamofire.Session` to be used for future network requests.
     ///
     /// - Returns: A new instance of `Alamofire.Session`.
-    func makeSession() async -> Alamofire.Session
+    func makeSession() async -> NetworkSession
 
     /// Resolves and returns the current valid network session.
     ///
@@ -38,6 +36,6 @@ public protocol NetworkSessionProviding: Sendable {
     /// of a new session by calling `makeSession()`.
     ///
     /// - Returns: The current or newly created `Alamofire.Session` instance.
-    func resolveSession() async -> Alamofire.Session
-    
+    func resolveSession() async -> NetworkSession
+
 }

@@ -5,7 +5,6 @@
 //  Created by Filip Šašala on 10/12/2023.
 //
 
-import Alamofire
 import Foundation
 
 // MARK: - Endpoint
@@ -18,13 +17,13 @@ public protocol Endpoint {
     
     /// HTTP method to be used for the request.
     var method: HTTPMethod { get }
-    
+
     /// Parameters to be sent with the request.
     var parameters: EndpointParameters? { get }
     
     /// HTTP headers to be added to the request.
     var headers: HTTPHeaders? { get }
-    
+
     /// Encoding to be used for encoding the parameters.
     var encoding: ParameterEncoding { get }
 
@@ -55,13 +54,15 @@ public extension Endpoint {
 // MARK: - Parameters
 
 /// Enum that represents the type of parameters to be sent with the request.
+@available(*, deprecated)
 public enum EndpointParameters {
 
+    public typealias Parameters = [String: Any]
     public typealias CustomEncodable = (Encodable & Sendable & WithCustomEncoder)
 
     /// Case for sending `Parameters`.
     case parameters(Parameters)
-    
+
     /// Case for sending an instance of `Encodable`.
     case model(Encodable)
 
@@ -85,6 +86,54 @@ public enum EndpointParameters {
                 return nil
             }
         }
+    }
+
+    internal func data() -> Data? {
+        switch self {
+        case .model(let codableModel as CustomEncodable):
+            return try? JSONSerialization.data(withJSONObject: codableModel.jsonDictionary)
+
+        case .model(let codableModel):
+            let encoder = JSONEncoder()
+            let data = try? encoder.encode(codableModel)
+            return data
+
+        case .parameters(let parameters):
+            return try? JSONSerialization.data(withJSONObject: parameters)
+        }
+    }
+
+    internal func queryItems() -> [URLQueryItem] {
+        guard let dictionary = self.dictionary else { return [] }
+        return dictionary.map { key, value in URLQueryItem(name: key, value: "\(value)") }
+    }
+
+}
+
+// MARK: - Compatibility
+
+@available(*, deprecated)
+public protocol ParameterEncoding {}
+
+@available(*, deprecated)
+public enum URLEncoding: ParameterEncoding {
+    case `default`
+}
+
+@available(*, deprecated)
+public enum JSONEncoding: ParameterEncoding {
+    case `default`
+}
+
+@available(*, deprecated, message: "Use URLConvertible instead.")
+public extension String {
+
+    @available(*, deprecated, message: "Use URLConvertible instead.")
+    public func asURL() throws -> URL {
+        guard let url = URL(string: self) else {
+            throw URLError(.badURL).asNetworkError()
+        }
+        return url
     }
 
 }

@@ -14,29 +14,29 @@
 /// a mechanism for deferring the resolution of a session.
 ///
 /// The session is supplied asynchronously via a `TransientSessionSupplier`.
-public struct TransientSession {
-
-    /// Function that will resolve a `NetworkSession` asynchronously when required.
-    public typealias TransientSessionSupplier = (@Sendable () async -> NetworkSession)
-
-    private let supplier: TransientSessionSupplier
-
-    /// Creates `TransientSession` with a supplier for network session resolution.
-    ///
-    /// - Parameter supplier: A function that will provide a `NetworkSession`.
-    public init(_ supplier: @escaping TransientSessionSupplier) {
-        self.supplier = supplier
-    }
-
-    /// Resolves an appropriate session by calling the supplier.
-    /// - Returns: Network session resolved and returned from the supplier.
-    public func resolve() async -> NetworkSession {
-        return await supplier()
-    }
-    
-    /// Sugared resolution function. See ``resolve``.
-    public func callAsFunction() async -> NetworkSession {
-        return await resolve()
-    }
-
-}
+//public struct TransientSession {
+//
+//    /// Function that will resolve a `NetworkSession` asynchronously when required.
+//    public typealias TransientSessionSupplier = (@Sendable () async -> NetworkSession)
+//
+//    private let supplier: TransientSessionSupplier
+//
+//    /// Creates `TransientSession` with a supplier for network session resolution.
+//    ///
+//    /// - Parameter supplier: A function that will provide a `NetworkSession`.
+//    public init(_ supplier: @escaping TransientSessionSupplier) {
+//        self.supplier = supplier
+//    }
+//
+//    /// Resolves an appropriate session by calling the supplier.
+//    /// - Returns: Network session resolved and returned from the supplier.
+//    public func resolve() async -> NetworkSession {
+//        return await supplier()
+//    }
+//    
+//    /// Sugared resolution function. See ``resolve``.
+//    public func callAsFunction() async -> NetworkSession {
+//        return await resolve()
+//    }
+//
+//}
