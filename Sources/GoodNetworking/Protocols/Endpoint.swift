@@ -58,7 +58,6 @@ public extension Endpoint {
 public enum EndpointParameters {
 
     public typealias Parameters = [String: Any]
-    public typealias CustomEncodable = (Encodable & Sendable & WithCustomEncoder)
 
     /// Case for sending `Parameters`.
     case parameters(Parameters)
@@ -70,9 +69,6 @@ public enum EndpointParameters {
         switch self {
         case .parameters(let parameters):
             return parameters
-
-        case .model(let customEncodable as CustomEncodable):
-            return customEncodable.jsonDictionary
 
         case .model(let anyEncodable):
             let encoder = JSONEncoder()
@@ -90,9 +86,6 @@ public enum EndpointParameters {
 
     internal func data() -> Data? {
         switch self {
-        case .model(let codableModel as CustomEncodable):
-            return try? JSONSerialization.data(withJSONObject: codableModel.jsonDictionary)
-
         case .model(let codableModel):
             let encoder = JSONEncoder()
             let data = try? encoder.encode(codableModel)

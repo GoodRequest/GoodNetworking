@@ -26,7 +26,7 @@ import Foundation
         typealias YesActor = @NetworkActor () throws -> T
         typealias NoActor = () throws -> T
 
-        self.shared.preconditionIsolated()
+        dispatchPrecondition(condition: .onQueue(queue))
 
         // To do the unsafe cast, we have to pretend it's @escaping.
         return try withoutActuallyEscaping(operation) { (_ fn: @escaping YesActor) throws -> T in

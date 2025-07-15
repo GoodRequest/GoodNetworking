@@ -7,18 +7,151 @@
 
 import Foundation
 
-// MARK: - Interception
+// MARK: - Authenticator
 
-public protocol Interceptor: Sendable {
+public enum RetryResult {
 
-    func intercept(urlRequest: inout URLRequest)
+    case doNotRetry
+    case retryAfter(TimeInterval)
+    case retry
 
 }
+
+public protocol RefreshableCredential {
+
+    var requiresRefresh: Bool { get }
+
+}
+
+public protocol Authenticator: Sendable {
+
+    associatedtype Credential
+
+    func getCredential() async -> Credential?
+    func storeCredential(_ newCredential: Credential?) async
+
+    func apply(credential: Credential, to request: inout URLRequest) async throws(NetworkError)
+    func refresh(credential: Credential) async throws(NetworkError) -> Credential
+    func didRequest(_ request: inout URLRequest, failDueToAuthenticationError: HTTPError) -> Bool
+    func isRequest(_ request: inout URLRequest, authenticatedWith credential: Credential) -> Bool
+    func refresh(didFailDueToError error: HTTPError) async
+
+}
+
+public final class AuthenticationInterceptor<AuthenticatorType: Authenticator>: Interceptor, @unchecked Sendable {
+
+    private let authenticator: AuthenticatorType
+    private let lock: AsyncLock
+
+    public init(authenticator: AuthenticatorType) {
+        self.authenticator = authenticator
+        self.lock = AsyncLock()
+    }
+
+    public func adapt(urlRequest: inout URLRequest) async throws(NetworkError) {
+        await lock.lock()
+        if let credential = await authenticator.getCredential() {
+            try await authenticator.apply(credential: credential, to: &urlRequest)
+        }
+        lock.unlock()
+    }
+
+    public func retry(urlRequest: inout URLRequest, for session: NetworkSession, dueTo error: NetworkError) async throws(NetworkError) -> RetryResult {
+        // Request failed due to HTTP Error and not due to connection failure
+        guard case .remote(let hTTPError) = error else {
+            return .doNotRetry
+        }
+
+        // Remote failure occured due to authentication error
+        guard authenticator.didRequest(&urlRequest, failDueToAuthenticationError: hTTPError) else {
+            return .doNotRetry
+        }
+        
+        // Stop further authentication with possibly invalid credential.
+        // If a refresh is already in progress, stopping other requests
+        // here will ensure further retries will contain the latest credentials.
+        await lock.lock()
+        defer { lock.unlock() }
+
+        // A credential is available
+        guard let credential = await authenticator.getCredential() else {
+            return .doNotRetry
+        }
+        
+        // Check if request is authenticated with the latest available credential
+        // Retry if request was sent with invalid credential (previously expired, etc.)
+        guard authenticator.isRequest(&urlRequest, authenticatedWith: credential) else {
+            return .retry
+        }
+
+        // Refresh and store new token
+        try await refresh(credential: credential)
+
+        // Retry previous request by applying new authentication credential
+        return .retry
+    }
+
+    private func refresh(credential: AuthenticatorType.Credential) async throws(NetworkError) {
+        // Current credential must be expired at this point
+        // and is safe to clear
+        await authenticator.storeCredential(nil)
+
+        // Refresh the expired credential and store new credential
+        // Let user handle remote errors (eg. HTTP 403) before throwing
+        // (eg. kick user from session, or automatically log out).
+        do {
+            let newCredential = try await authenticator.refresh(credential: credential)
+            await authenticator.storeCredential(newCredential)
+        } catch let error {
+            if case .remote(let httpError) = error {
+                await authenticator.refresh(didFailDueToError: httpError)
+            }
+            throw error
+        }
+    }
+
+}
+
+public final class NoAuthenticator: Authenticator {
+
+    public typealias Credential = Void
+
+    public init() {}
+    public func getCredential() async -> Credential? { nil }
+    public func storeCredential(_ newCredential: Credential?) async {}
+    public func apply(credential: Credential, to request: inout URLRequest) async throws(NetworkError) {}
+    public func refresh(credential: Credential) async throws(NetworkError) -> Credential {}
+    public func didRequest(_ request: inout URLRequest, failDueToAuthenticationError: HTTPError) -> Bool { false }
+    public func isRequest(_ request: inout URLRequest, authenticatedWith credential: Credential) -> Bool { false }
+    public func refresh(didFailDueToError error: HTTPError) async {}
+
+}
+
+// MARK: - Interception
+
+public protocol Adapter: Sendable {
+
+    func adapt(urlRequest: inout URLRequest) async throws(NetworkError)
+
+}
+
+public protocol Retrier: Sendable {
+
+    func retry(urlRequest: inout URLRequest, for session: NetworkSession, dueTo error: NetworkError) async throws(NetworkError) -> RetryResult
+
+}
+
+public protocol Interceptor: Adapter, Retrier {}
 
 public final class NoInterceptor: Interceptor {
 
     public init() {}
-    public func intercept(urlRequest: inout URLRequest) {}
+
+    public func adapt(urlRequest: inout URLRequest) async throws(NetworkError) {}
+
+    public func retry(urlRequest: inout URLRequest, for session: NetworkSession, dueTo error: NetworkError) async throws(NetworkError) -> RetryResult {
+        return .doNotRetry
+    }
 
 }
 
@@ -30,10 +163,23 @@ public final class CompositeInterceptor: Interceptor {
         self.interceptors = interceptors
     }
 
-    public func intercept(urlRequest: inout URLRequest) {
-        for interceptor in interceptors {
-            interceptor.intercept(urlRequest: &urlRequest)
+    public func adapt(urlRequest: inout URLRequest) async throws(NetworkError) {
+        for adapter in interceptors {
+            try await adapter.adapt(urlRequest: &urlRequest)
         }
+    }
+
+    public func retry(urlRequest: inout URLRequest, for session: NetworkSession, dueTo error: NetworkError) async throws(NetworkError) -> RetryResult {
+        for retrier in interceptors {
+            let retryResult = try await retrier.retry(urlRequest: &urlRequest, for: session, dueTo: error)
+            switch retryResult {
+            case .doNotRetry:
+                continue
+            case .retry, .retryAfter:
+                return retryResult
+            }
+        }
+        return .doNotRetry
     }
 
 }
@@ -45,6 +191,7 @@ public final class CompositeInterceptor: Interceptor {
     private let baseUrl: any URLConvertible
     private let baseHeaders: HTTPHeaders
     private let interceptor: any Interceptor
+    private let logger: any NetworkLogger
 
     private let configuration: URLSessionConfiguration
     private let delegateQueue: OperationQueue
@@ -69,8 +216,10 @@ public final class CompositeInterceptor: Interceptor {
         self.baseUrl = baseUrl
         self.baseHeaders = baseHeaders
         self.interceptor = interceptor
+        self.logger = logger
 
         let operationQueue = OperationQueue()
+        operationQueue.name = "NetworkActorSerialExecutorOperationQueue"
         operationQueue.underlyingQueue = NetworkActor.queue
 
         let configuration = URLSessionConfiguration.ephemeral
@@ -79,7 +228,7 @@ public final class CompositeInterceptor: Interceptor {
         self.configuration = configuration
         self.delegateQueue = operationQueue
 
-        // create URLSession lazily, isolated on @NetworkActor, when required first time
+        // create URLSession lazily, isolated on @NetworkActor, when requested first time
 
         super.init()
     }
@@ -92,7 +241,7 @@ internal extension NetworkSession {
         if let existingProxy = self.taskProxyMap[task.taskIdentifier] {
             return existingProxy
         } else {
-            let newProxy = DataTaskProxy(task: task)
+            let newProxy = DataTaskProxy(task: task, logger: logger)
             self.taskProxyMap[task.taskIdentifier] = newProxy
             return newProxy
         }
@@ -126,12 +275,6 @@ extension NetworkSessionDelegate: URLSessionDelegate {
 }
 
 extension NetworkSessionDelegate: URLSessionTaskDelegate {
-
-    func urlSession(_ session: URLSession, didCreateTask task: URLSessionTask) {
-        NetworkActor.assumeIsolated {
-            print(Thread.current.name)
-        }
-    }
 
     func urlSession(
         _ session: URLSession,
@@ -205,20 +348,22 @@ extension NetworkSession {
         let data = try await request(endpoint: endpoint)
 
         // exist-fast if decoding is not needed
-        if T.self is Data.Type {
+        if T.self is Data {
             return data as! T
         }
 
         do {
             let model = try JSONDecoder().decode(T.self, from: data)
             return model
+        } catch let error as DecodingError {
+            throw error.asNetworkError()
         } catch {
             throw URLError(.cannotDecodeRawData).asNetworkError()
         }
     }
 
     public func request(endpoint: Endpoint) async throws(NetworkError) -> Data {
-        guard let url = await URL(string: endpoint.path, relativeTo: baseUrl.resolveUrl()) else {
+        guard let url = await baseUrl.resolveUrl()?.appendingPathComponent(endpoint.path) else {
             throw URLError(.badURL).asNetworkError()
         }
 
@@ -233,7 +378,7 @@ extension NetworkSession {
             } else {
                 var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
                 urlComponents?.queryItems?.append(contentsOf: endpoint.parameters?.queryItems() ?? [])
-                request.url = urlComponents?.url
+            request.url = urlComponents?.url
             }
         } else if endpoint.encoding is JSONEncoding {
             request.httpBody = endpoint.parameters?.data()
@@ -241,11 +386,77 @@ extension NetworkSession {
             throw URLError(.cannotEncodeRawData).asNetworkError()
         }
 
-        interceptor.intercept(urlRequest: &request)
+        return try await executeRequest(request: &request)
+    }
 
+}
+
+// MARK: - Private
+
+private extension NetworkSession {
+
+    func executeRequest(request: inout URLRequest) async throws(NetworkError) -> Data {
+        // Headers
+        let httpMethodSupportsBody = request.method.hasRequestBody
+        let httpMethodHasBody = (request.httpBody != nil)
+
+        if httpMethodSupportsBody && httpMethodHasBody { // assume all apps are always encoding data as JSON
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        } else if httpMethodSupportsBody && !httpMethodHasBody { // supports body, but has parameters in query
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        } else if !httpMethodSupportsBody {
+            // do not set Content-Type
+        } else {
+            logger.logNetworkEvent(
+                message: "Cannot resolve Content-Type automatically",
+                level: .warning,
+                file: #file,
+                line: #line
+            )
+        }
+
+        baseHeaders.forEach { header in
+            request.setValue(header.value, forHTTPHeaderField: header.name)
+        }
+
+        // Interceptors
+        try await interceptor.adapt(urlRequest: &request)
+
+        // Data task
         let dataTask = session.dataTask(with: request)
         let dataTaskProxy = proxyForTask(dataTask)
-        return try await dataTaskProxy.data()
+        dataTask.resume()
+
+        // Request data + validation + retry (?)
+        do {
+            let data = try await dataTaskProxy.data()
+            let validator = DefaultValidationProvider()
+            let statusCode = (dataTask.response as? HTTPURLResponse)?.statusCode ?? -1
+            try validator.validate(statusCode: statusCode, data: data)
+            return data
+        } catch let networkError {
+            return try await retryRequest(request: &request, error: networkError)
+        }
+    }
+
+    func retryRequest(request: inout URLRequest, error networkError: NetworkError) async throws(NetworkError) -> Data {
+        let retryResult = try await interceptor.retry(urlRequest: &request, for: self, dueTo: networkError)
+
+        switch retryResult {
+        case .doNotRetry:
+            throw networkError
+
+        case .retryAfter(let timeInterval):
+            do {
+                try await Task.sleep(nanoseconds: UInt64(timeInterval * 10e9))
+            } catch {
+                throw URLError(.cancelled).asNetworkError()
+            }
+            fallthrough
+
+        case .retry:
+            return try await self.executeRequest(request: &request)
+        }
     }
 
 }
@@ -254,20 +465,43 @@ extension NetworkSession {
 
 extension NetworkSession {
 
-    public func get(_ path: URLConvertible) async throws(NetworkError) -> Data {
-        guard let url = await path.resolveUrl() else {
+    public func get<T: Decodable>(_ path: URLConvertible) async throws(NetworkError) -> T {
+        let data = try await getRaw(path)
+
+        // exit-fast if decoding is not needed
+        if T.self is Data.Type {
+            return data as! T
+        }
+
+        do {
+            let model = try JSONDecoder().decode(T.self, from: data)
+            return model
+        } catch {
+            throw URLError(.cannotDecodeRawData).asNetworkError()
+        }
+    }
+
+    public func get(_ path: URLConvertible) async throws(NetworkError) -> JSON {
+        do {
+            let data = try await getRaw(path)
+            return try JSON(data: data)
+        } catch {
+            throw URLError(.cannotDecodeRawData).asNetworkError()
+        }
+    }
+
+    public func getRaw(_ path: URLConvertible) async throws(NetworkError) -> Data {
+        #warning("Check URL creation")
+        guard let path = await path.resolveUrl(), let baseUrl = await baseUrl.resolveUrl() else {
             throw URLError(.badURL).asNetworkError()
         }
+        let url = baseUrl.appendingPathComponent(path.path)
 
         var request = URLRequest(url: url)
         request.httpMethod = HTTPMethod.get.rawValue
         request.httpBody = nil
 
-        interceptor.intercept(urlRequest: &request)
-
-        let dataTask = session.dataTask(with: request)
-        let dataTaskProxy = proxyForTask(dataTask)
-        return try await dataTaskProxy.data()
+        return try await executeRequest(request: &request)
     }
 
 }
@@ -284,22 +518,24 @@ extension URLError.Code {
 
 // MARK: - DataTaskProxy
 
-@NetworkActor final class DataTaskProxy {
+@NetworkActor internal final class DataTaskProxy {
 
     private(set) var task: URLSessionTask
+    private let logger: any NetworkLogger
 
-    private var receivedData: Data = Data()
-    private var receivedError: (URLError)? = nil
+    internal var receivedData: Data = Data()
+    internal var receivedError: (URLError)? = nil
+
     private var isFinished = false
     private var continuation: CheckedContinuation<Void, Never>? = nil
 
-    func data() async throws(NetworkError) -> Data {
+    internal func data() async throws(NetworkError) -> Data {
         if !isFinished { await waitForCompletion() }
         if let receivedError { throw receivedError.asNetworkError() }
         return receivedData
     }
 
-    func result() async -> Result<Data, NetworkError> {
+    internal func result() async -> Result<Data, NetworkError> {
         if !isFinished { await waitForCompletion() }
         if let receivedError {
             return .failure(receivedError.asNetworkError())
@@ -308,30 +544,41 @@ extension URLError.Code {
         }
     }
 
-    init(task: URLSessionTask) {
+    internal init(task: URLSessionTask, logger: any NetworkLogger) {
         self.task = task
+        self.logger = logger
     }
 
-    func dataTaskDidReceive(data: Data) {
+    internal func dataTaskDidReceive(data: Data) {
         assert(isFinished == false, "ILLEGAL ATTEMPT TO APPEND DATA TO FINISHED PROXY INSTANCE")
         receivedData.append(data)
     }
 
-    func dataTaskDidComplete(withError error: (any Error)?) {
+    internal func dataTaskDidComplete(withError error: (any Error)?) {
         assert(isFinished == false, "ILLEGAL ATTEMPT TO RESUME FINISHED CONTINUATION")
         self.isFinished = true
 
         if let error = error as? URLError {
             self.receivedError = error
-        } else {
-            fatalError("URLSessionTaskDelegate does not throw URLErrors")
+        } else if error != nil {
+            assertionFailure("URLSessionTaskDelegate did not throw expected type URLError")
+            self.receivedError = URLError(.unknown)
+        }
+
+        Task { @NetworkActor in
+            logger.logNetworkEvent(
+                message: prepareRequestInfo(),
+                level: receivedError == nil ? .debug : .warning,
+                file: #file,
+                line: #line
+            )
         }
 
         continuation?.resume()
         continuation = nil
     }
 
-    func waitForCompletion() async {
+    internal func waitForCompletion() async {
         assert(self.continuation == nil, "CALLING RESULT/DATA CONCURRENTLY WILL LEAK RESOURCES")
         assert(isFinished == false, "FINISHED PROXY CANNOT RESUME CONTINUATION")
         try await withCheckedContinuation { self.continuation = $0 }
@@ -339,17 +586,37 @@ extension URLError.Code {
 
 }
 
+// MARK: - Extensions
+
+public extension URLRequest {
+
+    var method: HTTPMethod {
+        HTTPMethod(rawValue: self.httpMethod ?? "GET") ?? .get
+    }
+
+}
+
 // MARK: - Sample
 
+#warning("vyhodit sample pred releasom")
 func x() async {
     let session = NetworkSession(
         baseUrl: "https://api.sampleapis.com/",
-        baseHeaders: [HTTPHeader("User-Agent: iOS app")]
+        baseHeaders: [HTTPHeader("User-Agent: iOS app")],
+        interceptor: CompositeInterceptor(interceptors: [
+            AuthenticationInterceptor(authenticator: NoAuthenticator())
+        ])
     )
 
     do {
-        try await session.request(endpoint: CoffeeEndpoint.hot) as String
-        try await session.get("/coffee/hot")
+
+
+
+        let coffeeListA: String = try await session.request(endpoint: CoffeeEndpoint.hot)
+        let coffeeListB: Data = try await session.get("/coffee/hot")
+
+
+
     } catch let error {
         assert(error is URLError)
     }

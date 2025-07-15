@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension URLError {
+public extension URLError {
 
     func asNetworkError() -> NetworkError {
         return NetworkError.local(self)
@@ -15,18 +15,30 @@ extension URLError {
 
 }
 
-public enum NetworkError: LocalizedError, Hashable {
+public extension DecodingError {
+
+    func asNetworkError() -> NetworkError {
+        return NetworkError.decoding(self)
+    }
+
+}
+
+public enum NetworkError: LocalizedError {
 
     case local(URLError)
     case remote(HTTPError)
+    case decoding(DecodingError)
 
     public var errorDescription: String? {
         switch self {
         case .local(let urlError):
-            return ""
+            return urlError.localizedDescription
 
         case .remote(let httpError):
             return httpError.localizedDescription
+
+        case .decoding(let decodingError):
+            return decodingError.localizedDescription
         }
     }
 
