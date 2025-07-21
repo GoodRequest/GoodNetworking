@@ -49,10 +49,20 @@ import Foundation
 		let object = try JSONSerialization.jsonObject(with: data, options: options)
 		self = JSON(object)
 	}
+    
+    public init(encodable model: any Encodable, encoder: JSONEncoder) {
+        if let data = try? encoder.encode(model), let converted = try? JSON(data: data) {
+            self = converted
+        } else {
+            self = JSON.null
+        }
+    }
 	
 	public init(_ object: Any) {
-		if let data = object as? Data, let converted = try? JSON(data: data) {
-			self = converted
+        if let data = object as? Data, let converted = try? JSON(data: data) {
+            self = converted
+        } else if let model = object as? any Encodable, let data = try? JSONEncoder().encode(model), let converted = try? JSON(data: data) {
+            self = converted
 		} else if let dictionary = object as? [String: Any] {
 			self = JSON.dictionary(dictionary.mapValues { JSON($0) })
 		} else if let array = object as? [Any] {

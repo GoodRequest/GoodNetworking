@@ -189,7 +189,7 @@ public final class CompositeInterceptor: Interceptor {
 @NetworkActor public final class NetworkSession: NSObject, Sendable {
 
     private let baseUrl: any URLConvertible
-    private let baseHeaders: HTTPHeaders
+    private let sessionHeaders: HTTPHeaders
     private let interceptor: any Interceptor
     private let logger: any NetworkLogger
 
@@ -214,7 +214,7 @@ public final class CompositeInterceptor: Interceptor {
         logger: any NetworkLogger = PrintNetworkLogger()
     ) {
         self.baseUrl = baseUrl
-        self.baseHeaders = baseHeaders
+        self.sessionHeaders = baseHeaders
         self.interceptor = interceptor
         self.logger = logger
 
@@ -313,7 +313,9 @@ extension NetworkSessionDelegate: URLSessionDataDelegate {
 // MARK: - Request
 
 extension NetworkSession {
-
+    
+    // MARK: Result
+    
     public func requestResult<T: Decodable, F: Error>(
         endpoint: Endpoint,
         validationProvider: any ValidationProviding<F> = DefaultValidationProvider()
@@ -325,13 +327,8 @@ extension NetworkSession {
             return .failure(error)
         }
     }
-
-    public func request<F: Error>(
-        endpoint: Endpoint,
-        validationProvider: any ValidationProviding<F> = DefaultValidationProvider()
-    ) async throws(F) {
-        _ = try await request(endpoint: endpoint, validationProvider: validationProvider)
-    }
+    
+    // MARK: Codable
 
     public func request<T: Decodable, F: Error>(
         endpoint: Endpoint,
@@ -345,15 +342,24 @@ extension NetworkSession {
     }
 
     public func request<T: Decodable>(endpoint: Endpoint) async throws(NetworkError) -> T {
-        let data = try await request(endpoint: endpoint)
+        let data = try await request(endpoint: endpoint) as Data
 
-        // exist-fast if decoding is not needed
-        if T.self is Data {
+        // handle decoding corner cases
+        var decoder = JSONDecoder()
+        switch T.self {
+        case is Data.Type:
             return data as! T
+            
+        case let t as WithCustomDecoder:
+            decoder = type(of: t).decoder
+            
+        default:
+            break
         }
 
+        // decode
         do {
-            let model = try JSONDecoder().decode(T.self, from: data)
+            let model = try decoder.decode(T.self, from: data)
             return model
         } catch let error as DecodingError {
             throw error.asNetworkError()
@@ -361,29 +367,91 @@ extension NetworkSession {
             throw URLError(.cannotDecodeRawData).asNetworkError()
         }
     }
-
+    
+    // MARK: JSON
+    
+    public func request(endpoint: Endpoint) async throws(NetworkError) -> JSON {
+        let responseData = try await request(endpoint: endpoint) as Data
+        guard let json = try? JSON(data: responseData) else {
+            throw URLError(.cannotDecodeRawData).asNetworkError()
+        }
+        return json
+    }
+    
+    // MARK: Raw
+    
+    @discardableResult
     public func request(endpoint: Endpoint) async throws(NetworkError) -> Data {
-        guard let url = await baseUrl.resolveUrl()?.appendingPathComponent(endpoint.path) else {
+        guard let basePath = await baseUrl.resolveUrl()?.absoluteString,
+              let url = try? await endpoint.url(on: basePath)
+        else {
             throw URLError(.badURL).asNetworkError()
         }
 
         // url + method
         var request = URLRequest(url: url)
         request.httpMethod = endpoint.method.rawValue
-
+        
+        // headers
+        endpoint.headers?.forEach { header in
+            request.setValue(header.value, forHTTPHeaderField: header.name)
+        }
+        
         // encoding
-        if endpoint.encoding is URLEncoding {
-            if #available(iOS 16, *) {
-                request.url?.append(queryItems: endpoint.parameters?.queryItems() ?? [])
-            } else {
-                var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
-                urlComponents?.queryItems?.append(contentsOf: endpoint.parameters?.queryItems() ?? [])
-            request.url = urlComponents?.url
+        switch endpoint.parameters {
+        case .parameters(let parameters):
+            if endpoint.encoding is URLEncoding {
+                applyQueryParameters(to: &request, endpoint, url)
+            } else if endpoint.encoding is JSONEncoding {
+                logger.logNetworkEvent(
+                    message: "Attempt to encode dictionary as body, use JSON or Encodable instead",
+                    level: .error,
+                    file: #file,
+                    line: #line
+                )
+                request.httpBody = try endpoint.parameters?.data()
+            } else if endpoint.encoding is AutomaticEncoding {
+                request.httpBody = try endpoint.parameters?.data()
             }
-        } else if endpoint.encoding is JSONEncoding {
-            request.httpBody = endpoint.parameters?.data()
-        } else {
-            throw URLError(.cannotEncodeRawData).asNetworkError()
+            
+        case .query(let queryItems):
+            if endpoint.encoding is URLEncoding {
+                applyQueryParameters(to: &request, endpoint, url)
+            } else if endpoint.encoding is JSONEncoding {
+                preconditionFailure("Attempt to encode query parameters as JSON body")
+            } else if endpoint.encoding is AutomaticEncoding {
+                applyQueryParameters(to: &request, endpoint, url)
+            }
+            
+        case .model(let encodableModel):
+            if endpoint.encoding is URLEncoding {
+                applyQueryParameters(to: &request, endpoint, url)
+            } else if endpoint.encoding is JSONEncoding {
+                request.httpBody = try endpoint.parameters?.data()
+            } else if endpoint.encoding is AutomaticEncoding {
+                request.httpBody = try endpoint.parameters?.data()
+            }
+            
+        case .data(let data):
+            if endpoint.encoding is URLEncoding {
+                preconditionFailure("Encoding raw data into query is not supported")
+            } else if endpoint.encoding is JSONEncoding {
+                request.httpBody = try endpoint.parameters?.data()
+            } else if endpoint.encoding is AutomaticEncoding {
+                request.httpBody = try endpoint.parameters?.data()
+            }
+            
+        case .json(let json):
+            if endpoint.encoding is URLEncoding {
+                applyQueryParameters(to: &request, endpoint, url)
+            } else if endpoint.encoding is JSONEncoding {
+                request.httpBody = try endpoint.parameters?.data()
+            } else if endpoint.encoding is AutomaticEncoding {
+                request.httpBody = try endpoint.parameters?.data()
+            }
+            
+        case .none:
+            request.httpBody = nil
         }
 
         return try await executeRequest(request: &request)
@@ -396,11 +464,11 @@ extension NetworkSession {
 private extension NetworkSession {
 
     func executeRequest(request: inout URLRequest) async throws(NetworkError) -> Data {
-        // Headers
+        // Content type
         let httpMethodSupportsBody = request.method.hasRequestBody
         let httpMethodHasBody = (request.httpBody != nil)
 
-        if httpMethodSupportsBody && httpMethodHasBody { // assume all apps are always encoding data as JSON
+        if httpMethodSupportsBody && httpMethodHasBody { // assume we are always encoding data as JSON
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         } else if httpMethodSupportsBody && !httpMethodHasBody { // supports body, but has parameters in query
             request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
@@ -415,7 +483,8 @@ private extension NetworkSession {
             )
         }
 
-        baseHeaders.forEach { header in
+        // Session headers
+        sessionHeaders.forEach { header in
             request.setValue(header.value, forHTTPHeaderField: header.name)
         }
 
@@ -458,50 +527,16 @@ private extension NetworkSession {
             return try await self.executeRequest(request: &request)
         }
     }
-
-}
-
-// MARK: - Shorthand requests
-
-extension NetworkSession {
-
-    public func get<T: Decodable>(_ path: URLConvertible) async throws(NetworkError) -> T {
-        let data = try await getRaw(path)
-
-        // exit-fast if decoding is not needed
-        if T.self is Data.Type {
-            return data as! T
+    
+    @available(*, deprecated, message: "Unify parameter handling")
+    private func applyQueryParameters(to request: inout URLRequest, _ endpoint: any Endpoint, _ url: URL) {
+        if #available(iOS 16, *) {
+            request.url?.append(queryItems: endpoint.parameters?.queryItems() ?? [])
+        } else {
+            var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            urlComponents?.queryItems?.append(contentsOf: endpoint.parameters?.queryItems() ?? [])
+            request.url = urlComponents?.url
         }
-
-        do {
-            let model = try JSONDecoder().decode(T.self, from: data)
-            return model
-        } catch {
-            throw URLError(.cannotDecodeRawData).asNetworkError()
-        }
-    }
-
-    public func get(_ path: URLConvertible) async throws(NetworkError) -> JSON {
-        do {
-            let data = try await getRaw(path)
-            return try JSON(data: data)
-        } catch {
-            throw URLError(.cannotDecodeRawData).asNetworkError()
-        }
-    }
-
-    public func getRaw(_ path: URLConvertible) async throws(NetworkError) -> Data {
-        #warning("Check URL creation")
-        guard let path = await path.resolveUrl(), let baseUrl = await baseUrl.resolveUrl() else {
-            throw URLError(.badURL).asNetworkError()
-        }
-        let url = baseUrl.appendingPathComponent(path.path)
-
-        var request = URLRequest(url: url)
-        request.httpMethod = HTTPMethod.get.rawValue
-        request.httpBody = nil
-
-        return try await executeRequest(request: &request)
     }
 
 }
@@ -581,7 +616,7 @@ extension URLError.Code {
     internal func waitForCompletion() async {
         assert(self.continuation == nil, "CALLING RESULT/DATA CONCURRENTLY WILL LEAK RESOURCES")
         assert(isFinished == false, "FINISHED PROXY CANNOT RESUME CONTINUATION")
-        try await withCheckedContinuation { self.continuation = $0 }
+        await withCheckedContinuation { self.continuation = $0 }
     }
 
 }
@@ -613,12 +648,25 @@ func x() async {
 
 
         let coffeeListA: String = try await session.request(endpoint: CoffeeEndpoint.hot)
-        let coffeeListB: Data = try await session.get("/coffee/hot")
-
+        let coffeeListB: Data = try await session.get("/cards/list")
+        
+        
+        let answers = Data()
+        let data: Data = try await session.post("/coffee/survey/new")
+        
+        try await session.delete("/coffee/3")
+        
+        
+        try await session.request(
+            endpoint: at("/coffee/4")
+                .method(.get)
+                .header("Content-Type: application/xml")
+        )
+    
 
 
     } catch let error {
-        assert(error is URLError)
+        assert(error is NetworkError)
     }
 
 }

@@ -13,6 +13,14 @@ public protocol HeaderConvertible: Sendable {
 
 }
 
+extension String: HeaderConvertible {
+    
+    public func resolveHeader() -> HTTPHeader {
+        HTTPHeader(self)
+    }
+    
+}
+
 // MARK: - HTTPHeader
 
 public struct HTTPHeader: Equatable, Hashable, HeaderConvertible {
@@ -64,7 +72,7 @@ extension HTTPHeader: CustomStringConvertible {
 
 public struct HTTPHeaders: Equatable, Hashable, Sendable {
 
-    public let headers: [HTTPHeader]
+    public var headers: [HTTPHeader]
 
     public init(_ headers: [String: String]) {
         self.headers = headers.map(HTTPHeader.init).reduce(into: [], { $0.append($1) })
@@ -77,6 +85,10 @@ public struct HTTPHeaders: Equatable, Hashable, Sendable {
     public func value(for name: String) -> String? {
         guard let index = headers.firstIndex(where: { $0.name == name }) else { return nil }
         return headers[index].value
+    }
+    
+    public mutating func add(header: HTTPHeader) {
+        headers.append(header)
     }
 
 }
