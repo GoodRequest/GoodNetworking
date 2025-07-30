@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Encodable extensions
 
-@available(iOS, obsoleted: 4.0, message: "Use custom encode(to:) implementation instead where required")
+@available(*, deprecated, message: "Prefer custom encode(to:) implementation instead where required")
 public protocol WithCustomEncoder {
     
     static var encoder: JSONEncoder { get }
@@ -18,7 +18,7 @@ public protocol WithCustomEncoder {
     
 }
 
-@available(iOS, obsoleted: 4.0, message: "Use custom encode(to:) implementation instead where required")
+@available(*, deprecated, message: "Prefer custom encode(to:) implementation instead where required")
 public extension Encodable where Self: WithCustomEncoder {
     
     /// The `keyEncodingStrategy` property returns the default key encoding strategy of the `JSONEncoder`.
@@ -46,17 +46,15 @@ public extension Encodable where Self: WithCustomEncoder {
     /// - Throws: An error if encoding fails.
     /// - Returns: `Data` representation of the `Encodable` object.
     func encode() throws -> Data {
-        return Data()
-//        return try encoder.encode(self)
+        return try encoder.encode(self)
     }
     
     /// Returns the `Encodable` object as a JSON dictionary if encoding succeeds, otherwise it returns `nil`.
     var jsonDictionary: [String: (Any & Sendable)]? {
-        return nil
-//        guard let data = try? encoder.encode(self) else { return nil }
-//
-//        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments))
-//            .flatMap { $0 as? [String: (Any & Sendable)] }
+        guard let data = try? encoder.encode(self) else { return nil }
+
+        return (try? JSONSerialization.jsonObject(with: data, options: .allowFragments))
+            .flatMap { $0 as? [String: (Any & Sendable)] }
     }
     
 }
@@ -64,7 +62,7 @@ public extension Encodable where Self: WithCustomEncoder {
 
 // MARK: - Decodable extensions
 
-@available(iOS, obsoleted: 4.0, message: "Use custom init(from decoder:) implementation instead where required")
+@available(*, deprecated, message: "Prefer custom init(from decoder:) implementation instead where required")
 public protocol WithCustomDecoder {
     
     static var decoder: JSONDecoder { get }
@@ -73,7 +71,7 @@ public protocol WithCustomDecoder {
     
 }
 
-@available(iOS, obsoleted: 4.0, message: "Use custom init(from decoder:) implementation instead where required")
+@available(*, deprecated, message: "Prefer custom init(from decoder:) implementation instead where required")
 public extension Decodable where Self: WithCustomDecoder {
     
     /// Defines the `KeyDecodingStrategy` for all `Decodable WithCustomDecoder` objects using this extension.

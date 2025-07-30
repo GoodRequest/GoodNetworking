@@ -116,7 +116,7 @@ public protocol Endpoint {
     /// - Parameter baseUrl: Base URL for the request to combine with.
     /// - Throws: If creating a concrete URL fails.
     /// - Returns: URL for the request.
-    func url(on baseUrl: String) async throws -> URL
+    @NetworkActor func url(on baseUrl: URLConvertible) async -> URL?
 
 }
 
@@ -125,9 +125,12 @@ public extension Endpoint {
 
     var encoding: ParameterEncoding { AutomaticEncoding.default }
 
-    func url(on baseUrl: String) async throws -> URL {
-        let baseUrl = try baseUrl.asURL()
-        return await baseUrl.appendingPathComponent(path.resolveUrl()!.absoluteString)
+    @NetworkActor func url(on baseUrl: URLConvertible) async -> URL? {
+        let baseUrl = await baseUrl.resolveUrl()
+        let path = await path.resolveUrl()
+        
+        guard let baseUrl, let path else { return nil }
+        return await baseUrl.appendingPathComponent(path.absoluteString)
     }
     
 }

@@ -370,6 +370,7 @@ extension NetworkSession {
     
     // MARK: JSON
     
+    @_disfavoredOverload
     public func request(endpoint: Endpoint) async throws(NetworkError) -> JSON {
         let responseData = try await request(endpoint: endpoint) as Data
         guard let json = try? JSON(data: responseData) else {
@@ -383,7 +384,7 @@ extension NetworkSession {
     @discardableResult
     public func request(endpoint: Endpoint) async throws(NetworkError) -> Data {
         guard let basePath = await baseUrl.resolveUrl()?.absoluteString,
-              let url = try? await endpoint.url(on: basePath)
+              let url = await endpoint.url(on: basePath)
         else {
             throw URLError(.badURL).asNetworkError()
         }
@@ -657,11 +658,11 @@ func x() async {
         try await session.delete("/coffee/3")
         
         
-        try await session.request(
-            endpoint: at("/coffee/4")
-                .method(.get)
-                .header("Content-Type: application/xml")
-        )
+//        try await session.request(
+//            endpoint: at("/coffee/4")
+//                .method(.get)
+//                .header("Content-Type: application/xml")
+//        )
     
 
 
@@ -676,7 +677,9 @@ enum CoffeeEndpoint: Endpoint {
     case hot
 
     var method: HTTPMethod { .get }
-    var path: String { "/coffee/hot" }
+    var path: URLConvertible { "/coffee/hot" }
+    var headers: HTTPHeaders? { nil }
+    var parameters: EndpointParameters? { nil }
 
 }
 
