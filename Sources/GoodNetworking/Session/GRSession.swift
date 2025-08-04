@@ -187,6 +187,8 @@ public final class CompositeInterceptor: Interceptor {
 // MARK: - Initialization
 
 @NetworkActor public final class NetworkSession: NSObject, Sendable {
+    
+    nonisolated public let name: String
 
     private let baseUrl: any URLConvertible
     private let sessionHeaders: HTTPHeaders
@@ -211,12 +213,14 @@ public final class CompositeInterceptor: Interceptor {
         baseUrl: any URLConvertible,
         baseHeaders: HTTPHeaders = [],
         interceptor: any Interceptor = NoInterceptor(),
-        logger: any NetworkLogger = PrintNetworkLogger()
+        logger: any NetworkLogger = PrintNetworkLogger(),
+        name: String? = nil
     ) {
         self.baseUrl = baseUrl
         self.sessionHeaders = baseHeaders
         self.interceptor = interceptor
         self.logger = logger
+        self.name = name ?? "NetworkSession"
 
         let operationQueue = OperationQueue()
         operationQueue.name = "NetworkActorSerialExecutorOperationQueue"
