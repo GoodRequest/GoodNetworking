@@ -42,7 +42,7 @@ extension Query {
 
 extension Query {
 
-    public static func ==(lhs: any Query, rhs: any Query) -> Bool {
+    public static func ==(lhs: Self, rhs: Self) -> Bool {
         false // every query is unique
     }
 
