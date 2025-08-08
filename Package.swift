@@ -6,17 +6,14 @@ import PackageDescription
 let package = Package(
     name: "GoodNetworking",
     platforms: [
-        .iOS(.v13)
+        .iOS(.v13),
+        .macOS(.v10_15)
     ],
     products: [
         // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "GoodNetworking",
             targets: ["GoodNetworking"]
-        ),
-        .library(
-            name: "Mockable",
-            targets: ["Mockable"]
         )
     ],
     dependencies: [
@@ -35,25 +32,13 @@ let package = Package(
             resources: [.copy("PrivacyInfo.xcprivacy")],
             swiftSettings: [
                 .swiftLanguageMode(.v6),
+//                .unsafeFlags(["-Onone"])
             ]
-        ),
-        .target(
-            name: "Mockable",
-            dependencies: ["GoodNetworking"],
-            path: "./Sources/Mockable",
-            resources: [.copy("PrivacyInfo.xcprivacy")],
-            swiftSettings: [.swiftLanguageMode(.v6)]
         ),
         .testTarget(
             name: "GoodNetworkingTests",
-            dependencies: ["GoodNetworking", "Mockable"],
-            resources:
-                [
-                    .copy("Resources/EmptyElement.json"),
-                    .copy("Resources/ArrayNil.json"),
-                    .copy("Resources/IsoDate.json"),
-                    .copy("Resources/MilisecondsDate.json")
-                ],
+            dependencies: ["GoodNetworking"],
+            resources: [],
             swiftSettings: [.swiftLanguageMode(.v6)]
         ),
     ]

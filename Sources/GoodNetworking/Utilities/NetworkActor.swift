@@ -7,6 +7,8 @@
 
 import Foundation
 
+// MARK: - Actor
+
 @globalActor public actor NetworkActor {
 
     public static let shared: NetworkActor = NetworkActor()
@@ -37,22 +39,24 @@ import Foundation
 
 }
 
-final class NetworkActorSerialExecutor: SerialExecutor {
+// MARK: - Executor
+
+internal final class NetworkActorSerialExecutor: SerialExecutor {
 
     private let queue: DispatchQueue
 
-    init(queue: DispatchQueue) {
+    internal init(queue: DispatchQueue) {
         self.queue = queue
     }
 
-    func enqueue(_ job: UnownedJob) {
+    internal func enqueue(_ job: UnownedJob) {
         let executor = self.asUnownedSerialExecutor()
         queue.async {
             job.runSynchronously(on: executor)
         }
     }
 
-    func asUnownedSerialExecutor() -> UnownedSerialExecutor {
+    internal func asUnownedSerialExecutor() -> UnownedSerialExecutor {
         UnownedSerialExecutor(ordinary: self)
     }
 

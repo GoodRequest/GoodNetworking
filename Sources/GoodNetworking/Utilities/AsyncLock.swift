@@ -10,6 +10,8 @@
 
 import Foundation
 
+// MARK: - Async lock
+
 public final class AsyncLock: @unchecked Sendable {
 
     private enum State {

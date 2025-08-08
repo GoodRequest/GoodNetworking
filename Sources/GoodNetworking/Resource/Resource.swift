@@ -20,6 +20,7 @@ public struct RawResponse: Sendable {
 }
 
 @available(iOS 17.0, *)
+@available(macOS 14.0, *)
 @MainActor @Observable public final class Resource<R: RemoteResource> {
 
     private var session: NetworkSession
@@ -95,6 +96,7 @@ public struct RawResponse: Sendable {
 // MARK: - Operations
 
 @available(iOS 17.0, *)
+@available(macOS 14.0, *)
 extension Resource {
 
     public func create() async throws {
@@ -128,6 +130,7 @@ extension Resource {
 // MARK: - Create
 
 @available(iOS 17.0, *)
+@available(macOS 14.0, *)
 extension Resource where R: Creatable {
 
     public func create() async throws {
@@ -180,6 +183,7 @@ extension Resource where R: Creatable {
 // MARK: - Read
 
 @available(iOS 17.0, *)
+@available(macOS 14.0, *)
 extension Resource where R: Readable {
 
     // forceReload is default true, when resource is already set, calling read() is expected to always reload the data
@@ -241,6 +245,7 @@ extension Resource where R: Readable {
 // MARK: - Update
 
 @available(iOS 17.0, *)
+@available(macOS 14.0, *)
 extension Resource where R: Updatable {
 
     public func updateRemote() async throws {
@@ -293,6 +298,7 @@ extension Resource where R: Updatable {
 // MARK: - Delete
 
 @available(iOS 17.0, *)
+@available(macOS 14.0, *)
 extension Resource where R: Deletable {
 
     public func delete() async throws {
@@ -341,6 +347,7 @@ extension Resource where R: Deletable {
 // MARK: - List
 
 @available(iOS 17.0, *)
+@available(macOS 14.0, *)
 extension Resource where R: Listable {
 
     public var elements: [R.Resource] {

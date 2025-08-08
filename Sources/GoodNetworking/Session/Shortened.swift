@@ -7,7 +7,7 @@
 
 import Foundation
 
-// MARK: - Shorthand requests - GET
+// MARK: - GET - Shortened
 
 extension NetworkSession {
     
@@ -25,7 +25,7 @@ extension NetworkSession {
 
 }
 
-// MARK: - Shorthand requests - POST
+// MARK: - POST - Shortened
 
 extension NetworkSession {
     
@@ -76,7 +76,7 @@ extension NetworkSession {
     
 }
 
-// MARK: - Shorthand requests - PUT
+// MARK: - PUT - Shortened
 
 extension NetworkSession {
     
@@ -127,7 +127,7 @@ extension NetworkSession {
     
 }
 
-// MARK: - Shorthand requests - DELETE
+// MARK: - DELETE - Shortened
 
 extension NetworkSession {
     

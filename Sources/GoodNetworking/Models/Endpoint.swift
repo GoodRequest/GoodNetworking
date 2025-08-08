@@ -7,88 +7,6 @@
 
 import Foundation
 
-// MARK: - Endpoint builder
-
-public final class Endpoint2: Endpoint {
-    
-    public var path: URLConvertible
-    public var method: HTTPMethod = .get
-    
-    public var headers: HTTPHeaders? = []
-    public var parameters: EndpointParameters?
-    
-    @available(*, deprecated)
-    public var encoding: ParameterEncoding? {
-        AutomaticEncoding.default
-    }
-    
-    init(path: URLConvertible) {
-        self.path = path
-    }
-
-}
-
-extension Endpoint2 {
-    
-    func method(_ method: HTTPMethod) -> Self {
-        self.method = method
-        return self
-    }
-    
-    func header(_ header: HTTPHeader) -> Self {
-        self.headers?.add(header: header)
-        return self
-    }
-    
-    func headers(_ headers: HTTPHeaders) -> Self {
-        self.headers?.headers.append(contentsOf: headers.headers)
-        return self
-    }
-    
-    func body(data: Data?) -> Self {
-        assertBothQueryAndBodyUsage()
-        if let data {
-            self.parameters = .data(data)
-        } else {
-            self.parameters = nil
-        }
-        return self
-    }
-    
-    func body<T: Encodable>(model: T) -> Self {
-        assertBothQueryAndBodyUsage()
-        self.parameters = .model(model)
-        return self
-    }
-    
-    func body(json: JSON) -> Self {
-        assertBothQueryAndBodyUsage()
-        self.parameters = .json(json)
-        return self
-    }
-    
-    func query(_ items: [URLQueryItem]) -> Self {
-        assertBothQueryAndBodyUsage()
-        self.parameters = .query(items)
-        return self
-    }
-    
-    func query<T: Encodable>(_ model: T) -> Self {
-        assertBothQueryAndBodyUsage()
-        self.parameters = .model(model)
-        return self
-    }
-    
-    private func assertBothQueryAndBodyUsage() {
-        assert(self.parameters == nil, "Support for query and body parameters at the same time is currently not available.")
-    }
-    
-}
-
-public func at(_ path: URLConvertible) -> Endpoint2 {
-    Endpoint2(path: path)
-}
-
 // MARK: - Endpoint
 
 /// `GREndpoint` protocol defines a set of requirements for an endpoint.
@@ -130,7 +48,7 @@ public extension Endpoint {
         let path = await path.resolveUrl()
         
         guard let baseUrl, let path else { return nil }
-        return await baseUrl.appendingPathComponent(path.absoluteString)
+        return baseUrl.appendingPathComponent(path.absoluteString)
     }
     
 }

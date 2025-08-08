@@ -1,25 +1,11 @@
 //
-//  Header.swift
+//  HTTPHeader.swift
 //  GoodNetworking
 //
 //  Created by Filip Šašala on 02/07/2025.
 //
 
-// MARK: - HeaderConvertible
-
-public protocol HeaderConvertible: Sendable {
-
-    func resolveHeader() -> HTTPHeader
-
-}
-
-extension String: HeaderConvertible {
-    
-    public func resolveHeader() -> HTTPHeader {
-        HTTPHeader(self)
-    }
-    
-}
+import Foundation
 
 // MARK: - HTTPHeader
 
@@ -27,7 +13,26 @@ public struct HTTPHeader: Equatable, Hashable, HeaderConvertible {
 
     public let name: String
     public let value: String
+    
+    /// Try to initialize HTTPHeader from string value. If string value cannot be parsed
+    /// as a valid header, initialization fails with `nil`.
+    /// - Parameter string: String to parse as a HTTP header
+    public init?(from string: String) {
+        guard !string.isEmpty else { return nil }
+        
+        let split = string.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: true)
 
+        guard split.count == 2 else { return nil }
+        guard split[0].isEmpty == false else { return nil }
+        guard split[1].isEmpty == false else { return nil }
+
+        self.name = String(split[0])
+        self.value = String(split[1])
+    }
+
+    /// Initialize HTTPHeader from string value. String must be a valid header,
+    /// otherwise the initialization will trip an assertion.
+    /// - Parameter string: String representation of a HTTP header
     public init(_ string: String) {
         assert(!string.isEmpty)
 
@@ -143,4 +148,20 @@ extension HTTPHeaders: CustomStringConvertible {
         headers.map(\.description).joined(separator: "\n")
     }
 
+}
+
+// MARK: - HeaderConvertible
+
+public protocol HeaderConvertible: Sendable {
+
+    func resolveHeader() -> HTTPHeader
+
+}
+
+extension String: HeaderConvertible {
+    
+    public func resolveHeader() -> HTTPHeader {
+        HTTPHeader(self)
+    }
+    
 }

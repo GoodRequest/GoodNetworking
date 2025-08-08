@@ -1,5 +1,5 @@
 //
-//  CodableExtensions.swift
+//  WithCustomCoder.swift
 //  GoodNetworking
 //
 //  Created by Dominik Pethö on 11/9/18.

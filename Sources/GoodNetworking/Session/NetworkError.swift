@@ -7,21 +7,7 @@
 
 import Foundation
 
-public extension URLError {
-
-    func asNetworkError() -> NetworkError {
-        return NetworkError.local(self)
-    }
-
-}
-
-public extension DecodingError {
-
-    func asNetworkError() -> NetworkError {
-        return NetworkError.decoding(self)
-    }
-
-}
+// MARK: - Network error
 
 public enum NetworkError: LocalizedError {
 
@@ -52,6 +38,34 @@ public enum NetworkError: LocalizedError {
 
 }
 
+// MARK: - Local error extensions
+
+public extension URLError {
+
+    func asNetworkError() -> NetworkError {
+        return NetworkError.local(self)
+    }
+
+}
+
+public extension DecodingError {
+
+    func asNetworkError() -> NetworkError {
+        return NetworkError.decoding(self)
+    }
+
+}
+
+extension URLError.Code {
+
+    public static var cannotEncodeRawData: URLError.Code {
+        URLError.Code(rawValue: 7777)
+    }
+
+}
+
+// MARK: - Remote error
+
 public struct HTTPError: LocalizedError, Hashable {
 
     public let statusCode: Int
@@ -71,6 +85,8 @@ public struct HTTPError: LocalizedError, Hashable {
     }
 
 }
+
+// MARK: - Automatic pager
 
 public enum PagingError: LocalizedError {
 
