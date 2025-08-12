@@ -9,6 +9,32 @@ import Foundation
 
 // MARK: - JSON
 
+/// Dynamic enumeration allowing access to JSON properties without having to specify
+/// their exact structure as a decodable struct.
+///
+/// This approach allows variables mixing different types, effectively ignores invalid
+/// or missing values, supports mixed-type arrays and easy access to properties within them.
+///
+/// Usage:
+/// ```swift
+/// // Get JSON from web response
+/// let user: JSON = try await session.get("/user")
+///
+/// // name as an optional <String?>
+/// let name = user.name.string
+///
+/// // age as <Int?>
+/// let age = user.age.int
+///
+/// // name of the pet if user has pets, it is an array,
+/// // and contains an element, which has a `name` property
+/// //
+/// // resolved as <String?>
+/// let petName = user.pets[0].name.string
+/// ```
+///
+/// This approach is very effective in cases where the data is meant to be
+/// displayed in the user interface and does not need any further processing.
 @dynamicMemberLookup public enum JSON: Sendable {
     
     case dictionary(Dictionary<String, JSON>)
@@ -45,11 +71,20 @@ import Foundation
     
     // MARK: - Initializers
     
+    /// Create JSON from raw `Data`
+    /// - Parameters:
+    ///   - data: Raw `Data` of JSON object
+    ///   - options: Optional serialization options
     public init(data: Data, options: JSONSerialization.ReadingOptions = .allowFragments) throws {
         let object = try JSONSerialization.jsonObject(with: data, options: options)
         self = JSON(object)
     }
     
+    /// Create JSON from an encodable model, for example to be sent between
+    /// API boundaries or for pretty-printing.
+    /// - Parameters:
+    ///   - model: `Encodable` model
+    ///   - encoder: Encoder for encoding the model
     public init(encodable model: any Encodable, encoder: JSONEncoder) {
         if let data = try? encoder.encode(model), let converted = try? JSON(data: data) {
             self = converted
@@ -58,6 +93,13 @@ import Foundation
         }
     }
     
+    /// Try representing any Swift object as a dynamic structure. If conversion fails,
+    /// result of initialization will be `JSON.null`.
+    ///
+    /// This can be useful when type of objects is not known and needs to be encoded/decoded
+    /// before manipulation, or for pretty-printing unknown data.
+    ///
+    /// - Parameter object: Object to try to represent as JSON
     public init(_ object: Any) {
         if let data = object as? Data, let converted = try? JSON(data: data) {
             self = converted
@@ -82,6 +124,7 @@ import Foundation
     
     // MARK: - Accessors
     
+    /// Access the JSON value as a dictionary
     public var dictionary: Dictionary<String, JSON>? {
         if case .dictionary(let value) = self {
             return value
@@ -89,6 +132,7 @@ import Foundation
         return nil
     }
     
+    /// Access the JSON value as an array
     public var array: Array<JSON>? {
         if case .array(let value) = self {
             return value
@@ -96,6 +140,10 @@ import Foundation
         return nil
     }
     
+    /// Access the JSON value as a string.
+    ///
+    /// If the value is a number or a boolean, it is converted to String
+    /// before returning.
     public var string: String? {
         if case .string(let value) = self {
             return value
@@ -108,6 +156,11 @@ import Foundation
         }
     }
     
+    /// Access the JSON value as a number. This allows representing
+    /// the same numeric value as different types (see `NSNumber`).
+    ///
+    /// If the value is string or a boolean, it is converted to NSNumber
+    /// before returning.
     public var number: NSNumber? {
         if case .number(let value) = self {
             return value
@@ -120,14 +173,28 @@ import Foundation
         }
     }
     
+    /// Access the JSON value as a numeric `Double`.
     public var double: Double? {
         return number?.doubleValue
     }
     
+    /// Access the JSON value as an Integer.
     public var int: Int? {
         return number?.intValue
     }
     
+    /// Access the JSON value as a boolean.
+    ///
+    /// If the value is a numeric zero, result will be `false`, otherwise `true`.
+    ///
+    /// If the value is one of `true`, `t`, `yes`, `y` or `1`, result
+    /// will be `true`.
+    ///
+    /// If the value is one of `false`, `f`,  `no`, `n`, `0`, result
+    /// will be `false`.
+    ///
+    /// If the value is not a valid boolean, number, or a string, the result
+    /// will be `nil`.
     public var bool: Bool? {
         if case .bool(let value) = self {
             return value
@@ -146,6 +213,7 @@ import Foundation
     
     // MARK: - Public
     
+    /// Access the JSON value as a Foundation object of unknown type.
     public var object: Any {
         get {
             switch self {
@@ -159,6 +227,9 @@ import Foundation
         }
     }
     
+    /// Serialize the `JSON` enumeration as `Data` containing the JSON representation.
+    /// - Parameter options: Serialization options
+    /// - Returns: Representation of the value in JavaScript Object Notation format (JSON)
     public func data(options: JSONSerialization.WritingOptions = []) -> Data {
         return (try? JSONSerialization.data(withJSONObject: self.object, options: options)) ?? Data()
     }

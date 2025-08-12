@@ -11,15 +11,16 @@ import Foundation
 
 public protocol Interceptor: Adapter, Retrier {}
 
-// MARK: - No interceptor
+// MARK: - Default interceptor
 
-public final class NoInterceptor: Interceptor {
+public final class DefaultInterceptor: Interceptor {
 
     public init() {}
 
     public func adapt(urlRequest: inout URLRequest) async throws(NetworkError) {}
 
     public func retry(urlRequest: inout URLRequest, for session: NetworkSession, dueTo error: NetworkError) async throws(NetworkError) -> RetryResult {
+        #warning("TODO: better default retry logic (handle error type, HTTP method, ...")
         return .doNotRetry
     }
 

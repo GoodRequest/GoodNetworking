@@ -17,7 +17,7 @@ public protocol Retrier: Sendable {
 
 // MARK: - Retry result
 
-public enum RetryResult {
+public enum RetryResult: Sendable {
 
     case doNotRetry
     case retryAfter(TimeInterval)

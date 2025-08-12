@@ -35,7 +35,7 @@ import Foundation
     nonisolated public init(
         baseUrl: any URLConvertible,
         baseHeaders: HTTPHeaders = [],
-        interceptor: any Interceptor = NoInterceptor(),
+        interceptor: any Interceptor = DefaultInterceptor(),
         logger: any NetworkLogger = PrintNetworkLogger(),
         name: String? = nil
     ) {
@@ -99,10 +99,32 @@ extension NetworkSessionDelegate: URLSessionDelegate {
         didReceive challenge: URLAuthenticationChallenge,
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-#warning("TODO: Implement SSL pinning/certificate validation")
+//        // SSL Pinning: Compare server certificate with local (pinned) certificate
+//        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+//              let serverTrust = challenge.protectionSpace.serverTrust,
+//              let serverCertificate = SecTrustGetCertificateAtIndex(serverTrust, 0),
+//              let pinnedCertificateData = Self.pinnedCertificateData()
+//        else {
+//            completionHandler(.cancelAuthenticationChallenge, nil)
+//            return
+//        }
+//
+//        // Extract server certificate data
+//        let serverCertificateData = SecCertificateCopyData(serverCertificate) as Data
+//
+//        if serverCertificateData == pinnedCertificateData {
+//            let credential = URLCredential(trust: serverTrust)
+//            completionHandler(.useCredential, credential)
+//        } else {
+//            completionHandler(.cancelAuthenticationChallenge, nil)
+//        }
+        
+        #warning("TODO: Enable SSL pinning")
+        // https://developer.apple.com/documentation/foundation/performing-manual-server-trust-authentication
+        
+        // remove
         completionHandler(.performDefaultHandling, nil)
     }
-
 }
 
 extension NetworkSessionDelegate: URLSessionTaskDelegate {
@@ -225,7 +247,7 @@ extension NetworkSession {
         request.httpMethod = endpoint.method.rawValue
         
         // headers
-        endpoint.headers?.forEach { header in
+        endpoint.headers?.resolve().forEach { header in
             request.setValue(header.value, forHTTPHeaderField: header.name)
         }
         
@@ -316,7 +338,7 @@ private extension NetworkSession {
         }
 
         // Session headers
-        sessionHeaders.forEach { header in
+        sessionHeaders.resolve().forEach { header in
             request.setValue(header.value, forHTTPHeaderField: header.name)
         }
 

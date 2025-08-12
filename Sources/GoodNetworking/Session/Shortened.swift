@@ -127,6 +127,57 @@ extension NetworkSession {
     
 }
 
+// MARK: - PATCH - Shortened
+
+extension NetworkSession {
+    
+    // Codable
+    
+    public func patch<T: Encodable, R: Decodable>(_ path: URLConvertible, _ model: T) async throws(NetworkError) -> R {
+        return try await request(endpoint: at(path).method(.patch).body(model: model))
+    }
+    
+    public func patch<R: Decodable>(_ path: URLConvertible, _ body: JSON) async throws(NetworkError) -> R {
+        return try await request(endpoint: at(path).method(.patch).body(json: body))
+    }
+    
+    public func patch<R: Decodable>(_ path: URLConvertible, data: Data? = nil) async throws(NetworkError) -> R {
+        return try await request(endpoint: at(path).method(.patch).body(data: data))
+    }
+    
+    // JSON
+    
+    @discardableResult
+    public func patch<T: Encodable>(_ path: URLConvertible, _ model: T) async throws(NetworkError) -> JSON {
+        return try await request(endpoint: at(path).method(.patch).body(model: model))
+    }
+    
+    @discardableResult
+    public func patch(_ path: URLConvertible, _ body: JSON) async throws(NetworkError) -> JSON {
+        return try await request(endpoint: at(path).method(.patch).body(json: body))
+    }
+    
+    @discardableResult
+    public func patch(_ path: URLConvertible, data: Data? = nil) async throws(NetworkError) -> JSON {
+        return try await request(endpoint: at(path).method(.patch).body(data: data))
+    }
+    
+    // Raw
+    
+    public func patch<T: Encodable>(_ path: URLConvertible, _ model: T) async throws(NetworkError) -> Data {
+        return try await request(endpoint: at(path).method(.patch).body(model: model))
+    }
+    
+    public func patch(_ path: URLConvertible, _ body: JSON) async throws(NetworkError) -> Data {
+        return try await request(endpoint: at(path).method(.patch).body(json: body))
+    }
+    
+    public func patch(_ path: URLConvertible, data: Data?) async throws(NetworkError) -> Data {
+        return try await request(endpoint: at(path).method(.patch).body(data: data))
+    }
+    
+}
+
 // MARK: - DELETE - Shortened
 
 extension NetworkSession {

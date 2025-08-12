@@ -9,6 +9,8 @@ import Foundation
 
 // MARK: - Method
 
+/// Enumeration of all HTTP methods as stated in
+/// [RFC9110 specification](https://httpwg.org/specs/rfc9110.html#rfc.section.9.3)
 @frozen public enum HTTPMethod: String {
 
     case get = "GET"

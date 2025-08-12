@@ -23,7 +23,7 @@ public final class EndpointFactory: Endpoint {
         AutomaticEncoding.default
     }
     
-    init(path: URLConvertible) {
+    init(at path: URLConvertible) {
         self.path = path
     }
 
@@ -91,5 +91,5 @@ private extension EndpointFactory {
 }
 
 public func at(_ path: URLConvertible) -> EndpointFactory {
-    EndpointFactory(path: path)
+    EndpointFactory(at: path)
 }

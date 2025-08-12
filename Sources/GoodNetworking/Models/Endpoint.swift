@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: - Endpoint
 
-/// `GREndpoint` protocol defines a set of requirements for an endpoint.
+/// `Endpoint` protocol defines a set of requirements for an endpoint.
 public protocol Endpoint {
 
     /// The path to be appended to the base URL.

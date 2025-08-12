@@ -7,6 +7,10 @@
 
 import Foundation
 
+/// Interceptor responsible for authentication of network requests.
+///
+/// Authentication interceptor requires an instance of ``Authenticator``, which handles
+/// the logic of refreshing the credential, checking its validity or caching.
 public final class AuthenticationInterceptor<AuthenticatorType: Authenticator>: Interceptor, @unchecked Sendable {
 
     private let authenticator: AuthenticatorType
