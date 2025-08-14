@@ -19,7 +19,7 @@ public enum LogLevel: String, CaseIterable {
 public protocol NetworkLogger: Sendable {
 
     /// Logs the given message with a specific log level, file name, and line number.
-    nonisolated func logNetworkEvent(
+    func logNetworkEvent(
         message: Any,
         level: LogLevel,
         file: String,

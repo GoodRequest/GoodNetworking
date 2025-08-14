@@ -11,7 +11,7 @@ import Foundation
 
 /// `URLConvertible` defines a function that asynchronously resolves the base URL used for network requests.
 /// Classes or structs that conform to this protocol can implement their own logic for determining and returning the base URL.
-public protocol URLConvertible: Sendable {
+public protocol URLConvertible {
 
     /// Resolves and returns the base URL for network requests asynchronously.
     ///

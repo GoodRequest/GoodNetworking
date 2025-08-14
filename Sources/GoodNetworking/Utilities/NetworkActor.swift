@@ -10,54 +10,69 @@ import Foundation
 // MARK: - Actor
 
 @globalActor public actor NetworkActor {
-
+    
+    // MARK: - Static
+    
     public static let shared: NetworkActor = NetworkActor()
     public static let queue: DispatchQueue = DispatchQueue(label: "goodnetworking.queue")
-
-    private let executor: any SerialExecutor
-
+    
+    private static let executor: NetworkActorExecutor = NetworkActorExecutor()
+    
+    // MARK: - Properties
+    
+    // MARK: - Computed properties
+    
     public nonisolated var unownedExecutor: UnownedSerialExecutor {
-        UnownedSerialExecutor(ordinary: executor)
+        Self.executor.asUnownedSerialExecutor()
     }
-
-    public init() {
-        self.executor = NetworkActorSerialExecutor(queue: NetworkActor.queue)
-    }
-
-    public static func assumeIsolated<T : Sendable>(_ operation: @NetworkActor () throws -> T) rethrows -> T {
-        typealias YesActor = @NetworkActor () throws -> T
-        typealias NoActor = () throws -> T
-
-        dispatchPrecondition(condition: .onQueue(queue))
-
-        // To do the unsafe cast, we have to pretend it's @escaping.
-        return try withoutActuallyEscaping(operation) { (_ fn: @escaping YesActor) throws -> T in
-            let rawFn = unsafeBitCast(fn, to: NoActor.self)
-            return try rawFn()
+    
+    // MARK: - Initialization
+    
+    private init() {}
+    
+    // MARK: - Isolation
+    
+    public static func assumeIsolated<T>(
+        _ block: @NetworkActor () throws -> sending T
+    ) rethrows -> sending T {
+        typealias YesActor = @NetworkActor () throws -> sending T
+        typealias NoActor = () throws -> sending T
+        
+        NetworkActor.preconditionIsolated()
+        
+        return try withoutActuallyEscaping(block) { (_ fn: @escaping YesActor) throws -> sending T in
+            try unsafeBitCast(fn, to: NoActor.self)()
         }
     }
-
+    
 }
 
-// MARK: - Executor
-
-internal final class NetworkActorSerialExecutor: SerialExecutor {
-
-    private let queue: DispatchQueue
-
-    internal init(queue: DispatchQueue) {
-        self.queue = queue
-    }
-
+internal final class NetworkActorExecutor: SerialExecutor {
+    
     internal func enqueue(_ job: UnownedJob) {
-        let executor = self.asUnownedSerialExecutor()
-        queue.async {
-            job.runSynchronously(on: executor)
+        NetworkActor.queue.async {
+            job.runSynchronously(on: NetworkActor.sharedUnownedExecutor)
         }
     }
-
+    
     internal func asUnownedSerialExecutor() -> UnownedSerialExecutor {
         UnownedSerialExecutor(ordinary: self)
     }
-
+    
+    // AVAILABLE: (iOS 26.0, macOS 26.0, *)
+    internal func isIsolatingCurrentContext() -> Bool? {
+        if OperationQueue.current?.underlyingQueue == NetworkActor.queue {
+            return true
+        } else {
+            return nil
+        }
+    }
+    
+    // AVAILABLE: (iOS 18.0, macOS 15.0, *)
+    internal func checkIsolated() {
+        guard isIsolatingCurrentContext() ?? false else {
+            fatalError()
+        }
+    }
+    
 }

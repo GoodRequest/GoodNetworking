@@ -11,12 +11,12 @@ import Foundation
 
 /// HTTP headers are colon separated name-value pairs used for specifying request
 /// details, authentication and more.
-public struct HTTPHeader: Equatable, Hashable, HeaderConvertible {
+public struct HTTPHeader: Equatable, Hashable, Sendable, HeaderConvertible {
 
     public let name: String
     public let value: String
     
-    /// Try to initialize HTTPHeader from string value. If string value cannot be parsed
+    /// Try to initialize ``HTTPHeader`` from string value. If string value cannot be parsed
     /// as a valid header, initialization fails with `nil`.
     /// - Parameter string: String to parse as a HTTP header
     public init?(from string: String) {
@@ -32,7 +32,7 @@ public struct HTTPHeader: Equatable, Hashable, HeaderConvertible {
         self.value = String(split[1])
     }
 
-    /// Initialize HTTPHeader from string value. String must be a valid header,
+    /// Initialize ``HTTPHeader`` from string value. String must be a valid header,
     /// otherwise the initialization will trip an assertion.
     /// - Parameter string: String representation of a HTTP header
     public init(_ string: String) {
@@ -48,7 +48,7 @@ public struct HTTPHeader: Equatable, Hashable, HeaderConvertible {
         self.value = String(split[1])
     }
     
-    /// Initialize HTTPHeader as a name-value pair.
+    /// Initialize ``HTTPHeader`` as a name-value pair.
     /// - Parameters:
     ///   - name: Name of the header (part before colon)
     ///   - value: Value of the header (part after colon)
@@ -82,14 +82,14 @@ extension HTTPHeader: CustomStringConvertible {
 // MARK: - HTTPHeaders
 
 /// A collection of multiple headers. Can contain any entities convertible to
-/// `HTTPHeader` (`HeaderConvertible`). Final header names
+/// ``HTTPHeader`` (``HeaderConvertible``). Final header names
 /// and values are resolved at the time the request is sent.
 public struct HTTPHeaders: Sendable {
     
     /// List of contained headers
     public var headers: [any HeaderConvertible]
     
-    /// Create collection of `HTTPHeader`-s from key-value dictionary mapped as
+    /// Create collection of ``HTTPHeader``-s from key-value dictionary mapped as
     /// name-value header pairs.
     /// - Parameter headers: Dictionary, where keys are header names
     public init(_ headers: [String: String]) {
@@ -122,7 +122,7 @@ public struct HTTPHeaders: Sendable {
     }
     
     /// Resolve all headers to their final values.
-    /// - Returns: Array of resolved headers as `HTTPHeader`-s
+    /// - Returns: Array of resolved headers as ``HTTPHeader``-s
     public func resolve() -> [HTTPHeader] {
         headers.map { $0.resolveHeader() }
     }
@@ -197,12 +197,16 @@ extension HTTPHeaders: CustomStringConvertible {
 
 // MARK: - HeaderConvertible
 
-/// Allows conforming entities to be converted to HTTPHeader
-/// for subsequent use in HTTP requests.
+/// Allows conforming entities to be converted to ``HTTPHeader``
+/// for use in HTTP requests.
 public protocol HeaderConvertible: Sendable {
     
-    /// Resolves the final name and value of the header
-    /// - Returns: Valid HTTP header name-value pair
+    /// Resolves the final name and value of the header.
+    ///
+    /// This function will be called every time for each header
+    /// before a network request is sent.
+    ///
+    /// - Returns: Valid HTTP header (name-value pair)
     func resolveHeader() -> HTTPHeader
 
 }

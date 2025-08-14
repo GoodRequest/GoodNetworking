@@ -9,7 +9,19 @@ import Foundation
 
 // MARK: - Initialization
 
-@NetworkActor public final class NetworkSession: NSObject, Sendable {
+/// Main network session
+///
+/// Session description
+///
+/// - Base URL: resolved once per request
+/// - Session headers: resolved once per session
+/// - Request headers: resolved once per request
+/// - Interceptor: intercepts every request (adapts, decides if/when to retry)
+/// - Are retried requests intercepted again?
+/// - Describe in more detail how interceptors work
+/// - BaseURL provider pattern
+/// - Name is used for identification only, not used by the network session itself
+@NetworkActor public final class NetworkSession: NSObject {
     
     nonisolated public let name: String
 
@@ -39,19 +51,19 @@ import Foundation
         logger: any NetworkLogger = PrintNetworkLogger(),
         name: String? = nil
     ) {
+        self.name = name ?? "NetworkSession"
+        
         self.baseUrl = baseUrl
         self.sessionHeaders = baseHeaders
         self.interceptor = interceptor
         self.logger = logger
-        self.name = name ?? "NetworkSession"
 
         let operationQueue = OperationQueue()
         operationQueue.name = "NetworkActorSerialExecutorOperationQueue"
         operationQueue.underlyingQueue = NetworkActor.queue
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.httpAdditionalHeaders = baseHeaders.map { $0.resolveHeader() }.reduce(into: [:], { $0[$1.name] = $1.value })
-
+        
         self.configuration = configuration
         self.delegateQueue = operationQueue
 
