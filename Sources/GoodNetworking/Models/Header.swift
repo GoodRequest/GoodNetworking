@@ -16,11 +16,12 @@ public struct HTTPHeader: Equatable, Hashable, Sendable, HeaderConvertible {
     public let name: String
     public let value: String
     
-    /// Try to initialize ``HTTPHeader`` from string value. If string value cannot be parsed
-    /// as a valid header, initialization fails with `nil`.
+    /// Try to initialize ``HTTPHeader`` from string value. If string is `nil`
+    /// or cannot be parsed as a valid header, initializer will fail.
+    ///
     /// - Parameter string: String to parse as a HTTP header
-    public init?(from string: String) {
-        guard !string.isEmpty else { return nil }
+    public init?(from string: String?) {
+        guard let string, !string.isEmpty else { return nil }
         
         let split = string.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: true)
 
@@ -34,6 +35,7 @@ public struct HTTPHeader: Equatable, Hashable, Sendable, HeaderConvertible {
 
     /// Initialize ``HTTPHeader`` from string value. String must be a valid header,
     /// otherwise the initialization will trip an assertion.
+    ///
     /// - Parameter string: String representation of a HTTP header
     public init(_ string: String) {
         assert(!string.isEmpty)
@@ -49,6 +51,7 @@ public struct HTTPHeader: Equatable, Hashable, Sendable, HeaderConvertible {
     }
     
     /// Initialize ``HTTPHeader`` as a name-value pair.
+    ///
     /// - Parameters:
     ///   - name: Name of the header (part before colon)
     ///   - value: Value of the header (part after colon)
@@ -57,7 +60,7 @@ public struct HTTPHeader: Equatable, Hashable, Sendable, HeaderConvertible {
         self.value = value
     }
 
-    public func resolveHeader() -> HTTPHeader {
+    public func resolveHeader() -> HTTPHeader? {
         self
     }
 
@@ -91,9 +94,21 @@ public struct HTTPHeaders: Sendable {
     
     /// Create collection of ``HTTPHeader``-s from key-value dictionary mapped as
     /// name-value header pairs.
+    ///
     /// - Parameter headers: Dictionary, where keys are header names
     public init(_ headers: [String: String]) {
         self.headers = headers.map(HTTPHeader.init).reduce(into: [], { $0.append($1) })
+    }
+    
+    /// Creates HTTPHeaders struct from array(s) of ``HeaderConvertible``.
+    ///
+    /// Individual elements will not be resolved to ``HTTPHeader`` instances
+    /// during initialization.
+    ///
+    /// - Parameter elements: Single or multiple arrays of elements to be treated as headers
+    public init(_ elements: [any HeaderConvertible]...) {
+        self.headers = []
+        elements.forEach { headers.append(contentsOf: $0) }
     }
 
     /// Get the value of a header with name `name`
@@ -116,15 +131,17 @@ public struct HTTPHeaders: Sendable {
     
     /// Appends a new entity to the header collection. Does not resolve
     /// the header name or value.
+    ///
     /// - Parameter header: New header
     public mutating func add(header: any HeaderConvertible) {
         headers.append(header)
     }
     
     /// Resolve all headers to their final values.
+    ///
     /// - Returns: Array of resolved headers as ``HTTPHeader``-s
     public func resolve() -> [HTTPHeader] {
-        headers.map { $0.resolveHeader() }
+        headers.compactMap { $0.resolveHeader() }
     }
 
 }
@@ -206,14 +223,16 @@ public protocol HeaderConvertible: Sendable {
     /// This function will be called every time for each header
     /// before a network request is sent.
     ///
-    /// - Returns: Valid HTTP header (name-value pair)
-    func resolveHeader() -> HTTPHeader
+    /// If header cannot be resolved, this function can return `nil`.
+    ///
+    /// - Returns: Valid HTTP header (name-value pair) or nil
+    func resolveHeader() -> HTTPHeader?
 
 }
 
 extension String: HeaderConvertible {
     
-    public func resolveHeader() -> HTTPHeader {
+    public func resolveHeader() -> HTTPHeader? {
         HTTPHeader(self)
     }
     
