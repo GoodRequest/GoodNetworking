@@ -32,7 +32,7 @@ struct UserRequest: Encodable {
 
 // MARK: - Read response
 
-struct UserResponse: Codable, WithCustomDecoder, Equatable {
+struct UserResponse: Decodable, WithCustomDecoder {
 
     static let keyDecodingStrategy: JSONDecoder.KeyDecodingStrategy = .convertFromSnakeCase
 

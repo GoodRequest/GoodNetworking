@@ -17,13 +17,14 @@
 		09A9ECA12C48115A0032C359 /* GoodSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 09A9ECA02C48115A0032C359 /* GoodSwiftUI */; };
 		09A9ECA32C4811B00032C359 /* UserListScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9ECA22C4811B00032C359 /* UserListScreen.swift */; };
 		09A9ECAE2C4AC9810032C359 /* JobUser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09A9ECAD2C4AC9810032C359 /* JobUser.swift */; };
+		3F8799A12DF703B000B4286B /* SampleLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F8799A02DF703B000B4286B /* SampleLogger.swift */; };
 		5D4200142CBEE7ED006C4292 /* UserDefaultsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4200132CBEE7ED006C4292 /* UserDefaultsExtensions.swift */; };
 		5D4200192CBF97CC006C4292 /* ServerPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4200182CBF97CC006C4292 /* ServerPickerView.swift */; };
 		5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967B299C190B00DFAEAE /* GoodNetworking */; };
+		5D4A967E299C190B00DFAEAE /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967D299C190B00DFAEAE /* Mockable */; };
 		5D7C80652CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */; };
 		5D9BD7322CBD19C100667B76 /* ApiServerCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9BD7312CBD19C100667B76 /* ApiServerCollection.swift */; };
 		5D9BD7332CBD19C100667B76 /* ApiServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9BD7302CBD19C100667B76 /* ApiServer.swift */; };
-		5DBCDC302D53746A00DE6D04 /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 5DBCDC2F2D53746A00DE6D04 /* Mockable */; };
 		EACEC3FA29953DCB008242AA /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACEC3F929953DCB008242AA /* AppDelegate.swift */; };
 		EACEC40829953DCD008242AA /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = EACEC40629953DCD008242AA /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
@@ -35,13 +36,13 @@
 		09A9EC992C48015C0032C359 /* SampleEndpoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleEndpoint.swift; sourceTree = "<group>"; };
 		09A9ECA22C4811B00032C359 /* UserListScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserListScreen.swift; sourceTree = "<group>"; };
 		09A9ECAD2C4AC9810032C359 /* JobUser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobUser.swift; sourceTree = "<group>"; };
+		3F8799A02DF703B000B4286B /* SampleLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleLogger.swift; sourceTree = "<group>"; };
 		5D4200132CBEE7ED006C4292 /* UserDefaultsExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsExtensions.swift; sourceTree = "<group>"; };
 		5D4200182CBF97CC006C4292 /* ServerPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerPickerView.swift; sourceTree = "<group>"; };
 		5D4A967A299C18FB00DFAEAE /* GoodNetworking */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = GoodNetworking; path = ..; sourceTree = "<group>"; };
 		5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleSelectableBaseUrlProvider.swift; sourceTree = "<group>"; };
 		5D9BD7302CBD19C100667B76 /* ApiServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiServer.swift; sourceTree = "<group>"; };
 		5D9BD7312CBD19C100667B76 /* ApiServerCollection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiServerCollection.swift; sourceTree = "<group>"; };
-		5D9E57CA2D52B1A40060F854 /* SampleDeduplicatingResultProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleDeduplicatingResultProvider.swift; sourceTree = "<group>"; };
 		EACEC3F629953DCB008242AA /* GoodNetworking-Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GoodNetworking-Sample.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		EACEC3F929953DCB008242AA /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		EACEC40729953DCD008242AA /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -55,9 +56,9 @@
 			files = (
 				0973C9FD2C4C3FC6007BAF6A /* GoodMacros in Frameworks */,
 				09A9ECA12C48115A0032C359 /* GoodSwiftUI in Frameworks */,
-				5DBCDC302D53746A00DE6D04 /* Mockable in Frameworks */,
 				09A9EC9D2C48115A0032C359 /* GRAsyncImage in Frameworks */,
 				09A9EC9F2C48115A0032C359 /* GRInputField in Frameworks */,
+				5D4A967E299C190B00DFAEAE /* Mockable in Frameworks */,
 				5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -92,6 +93,7 @@
 				09A9EC942C4800B90032C359 /* SampleNetworkSessions.swift */,
 				09A9EC992C48015C0032C359 /* SampleEndpoint.swift */,
 				5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */,
+				3F8799A02DF703B000B4286B /* SampleLogger.swift */,
 			);
 			path = Managers;
 			sourceTree = "<group>";
@@ -110,14 +112,6 @@
 				5D4A967A299C18FB00DFAEAE /* GoodNetworking */,
 			);
 			name = Packages;
-			sourceTree = "<group>";
-		};
-		5DBCDC2E2D53720F00DE6D04 /* Provider */ = {
-			isa = PBXGroup;
-			children = (
-				5D9E57CA2D52B1A40060F854 /* SampleDeduplicatingResultProvider.swift */,
-			);
-			path = Provider;
 			sourceTree = "<group>";
 		};
 		EACEC3ED29953DCB008242AA = {
@@ -144,7 +138,6 @@
 				EACEC433299582F0008242AA /* Application */,
 				5D4200152CBEE7F2006C4292 /* Extensions */,
 				09A9EC902C4800240032C359 /* Models */,
-				5DBCDC2E2D53720F00DE6D04 /* Provider */,
 				09A9EC932C4800AA0032C359 /* Managers */,
 				09A9EC8D2C47FF830032C359 /* Screens */,
 			);
@@ -186,11 +179,11 @@
 			name = "GoodNetworking-Sample";
 			packageProductDependencies = (
 				5D4A967B299C190B00DFAEAE /* GoodNetworking */,
+				5D4A967D299C190B00DFAEAE /* Mockable */,
 				09A9EC9C2C48115A0032C359 /* GRAsyncImage */,
 				09A9EC9E2C48115A0032C359 /* GRInputField */,
 				09A9ECA02C48115A0032C359 /* GoodSwiftUI */,
 				0973C9FC2C4C3FC6007BAF6A /* GoodMacros */,
-				5DBCDC2F2D53746A00DE6D04 /* Mockable */,
 			);
 			productName = "GoodNetworking-Sample";
 			productReference = EACEC3F629953DCB008242AA /* GoodNetworking-Sample.app */;
@@ -204,7 +197,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1410;
-				LastUpgradeCheck = 1610;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					EACEC3F529953DCB008242AA = {
 						CreatedOnToolsVersion = 14.1;
@@ -250,6 +243,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				09A9ECA32C4811B00032C359 /* UserListScreen.swift in Sources */,
+				3F8799A12DF703B000B4286B /* SampleLogger.swift in Sources */,
 				09A9EC9A2C48015C0032C359 /* SampleEndpoint.swift in Sources */,
 				09A9EC8F2C47FF8E0032C359 /* UserScreen.swift in Sources */,
 				EACEC3FA29953DCB008242AA /* AppDelegate.swift in Sources */,
@@ -282,7 +276,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -345,7 +338,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -525,7 +517,7 @@
 			isa = XCSwiftPackageProductDependency;
 			productName = GoodNetworking;
 		};
-		5DBCDC2F2D53746A00DE6D04 /* Mockable */ = {
+		5D4A967D299C190B00DFAEAE /* Mockable */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = Mockable;
 		};

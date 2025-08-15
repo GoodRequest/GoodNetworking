@@ -1,24 +1,6 @@
 {
-  "originHash" : "886644daa6f3bcf0e06b25d6f55a2d8e5f9fcd6c28b069e7970f478683a82860",
+  "originHash" : "8eab421ee15e57c7b5a7c27243f361840c5e4ea94e8da3381f3024ef5ec78977",
   "pins" : [
-    {
-      "identity" : "alamofire",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Alamofire/Alamofire.git",
-      "state" : {
-        "revision" : "ea6a94b7dddffd0ca4d0f29252d95310b84dec84",
-        "version" : "5.10.0"
-      }
-    },
-    {
-      "identity" : "alamofireimage",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/Alamofire/AlamofireImage.git",
-      "state" : {
-        "revision" : "1eaf3b6c6882bed10f6e7b119665599dd2329aa1",
-        "version" : "4.3.0"
-      }
-    },
     {
       "identity" : "chronometer",
       "kind" : "remoteSourceControl",
@@ -26,15 +8,6 @@
       "state" : {
         "revision" : "d21b89e5cb5929b5175bdb3ad710a52cbf497eaa",
         "version" : "0.1.12"
-      }
-    },
-    {
-      "identity" : "goodlogger",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/GoodRequest/GoodLogger.git",
-      "state" : {
-        "revision" : "14318cd3a38a08ac49e2b1dee56386904fedecc5",
-        "version" : "1.3.0"
       }
     },
     {
