@@ -35,11 +35,7 @@ extension NetworkSession {
         let urlProvider = CustomBaseUrlProvider(serverCollection: prodServerCollection)
         #endif
         baseURLProvider = urlProvider
-        NetworkSession.sampleSession = NetworkSession(
-            baseUrl: urlProvider,
-            configuration: .default(logger: SampleLogger()),
-            logger: SampleLogger()
-        )
+        NetworkSession.sampleSession = NetworkSession(baseUrl: urlProvider)
     }
 
 }

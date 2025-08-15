@@ -7,6 +7,7 @@
 
 import Alamofire
 import Foundation
+import GoodLogger
 
 /// A request executor that deduplicates concurrent requests and provides caching capabilities.
 ///
@@ -36,8 +37,10 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
     /// A dictionary storing currently running or cached request tasks
     public static var runningRequestTasks: [String: ExecutorTask] = [:]
 
-    /// A private property that provides the logger.
-    private var logger: NetworkLogger?
+    /// A private property that provides the appropriate logger based on the iOS version.
+    ///
+    /// For iOS 14 and later, it uses `OSLogLogger`. For earlier versions, it defaults to `PrintLogger`.
+    private var logger: GoodLogger
 
     /// Creates a new deduplicating request executor.
     ///
@@ -45,8 +48,16 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
     ///   - taskId: A unique identifier for deduplicating requests
     ///   - cacheTimeout: The duration in seconds for which successful responses are cached. Defaults to 6 seconds.
     ///                   Set to 0 to disable caching.
-    public init(taskId: String? = nil, cacheTimeout: TimeInterval = 6, logger: NetworkLogger? = nil) {
-        self.logger = logger
+    public init(taskId: String? = nil, cacheTimeout: TimeInterval = 6, logger: GoodLogger? = nil) {
+        if let logger {
+            self.logger = logger
+        } else {
+            if #available(iOS 14, *) {
+                self.logger = OSLogLogger(logMetaData: false)
+            } else {
+                self.logger = PrintLogger(logMetaData: false)
+            }
+        }
         self.taskId = taskId
         self.cacheTimeout = cacheTimeout
     }
@@ -86,7 +97,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
             }
         
             if let runningTask = DeduplicatingRequestExecutor.runningRequestTasks[taskId] {
-                logger?.logNetworkEvent(message: "🚀 taskId: \(taskId) Cached value used", level: .info, fileName: #file, lineNumber: #line)
+                logger.log(message: "🚀 taskId: \(taskId) Cached value used", level: .info)
                 return await runningTask.task.value
             } else {
                 let requestTask = ExecutorTask.TaskType {
@@ -105,7 +116,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
                     }
                 }
 
-                logger?.logNetworkEvent(message: "🚀 taskId: \(taskId): Task created", level: .info, fileName: #file, lineNumber: #line)
+                logger.log(message: "🚀 taskId: \(taskId): Task created", level: .info)
 
                 let executorTask: ExecutorTask = ExecutorTask(
                     taskId: taskId,
@@ -118,7 +129,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
                 let dataResponse = await requestTask.value
                 switch dataResponse.result {
                 case .success:
-                    logger?.logNetworkEvent(message: "🚀 taskId: \(taskId): Task finished successfully", level: .info, fileName: #file, lineNumber: #line)
+                    logger.log(message: "🚀 taskId: \(taskId): Task finished successfully", level: .info)
 
                     if cacheTimeout > 0 {
                         DeduplicatingRequestExecutor.runningRequestTasks[taskId]?.finishDate = Date()
@@ -129,7 +140,7 @@ public final actor DeduplicatingRequestExecutor: RequestExecuting, Sendable, Ide
                     return dataResponse
 
                 case .failure:
-                    logger?.logNetworkEvent(message: "🚀 taskId: \(taskId): Task finished with error", level: .error, fileName: #file, lineNumber: #line)
+                    logger.log(message: "🚀 taskId: \(taskId): Task finished with error", level: .error)
                     DeduplicatingRequestExecutor.runningRequestTasks[taskId] = nil
                     return dataResponse
                 }

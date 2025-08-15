@@ -13,11 +13,7 @@ struct UserListScreen: View {
 
     // MARK: - State
 
-    @State private var users = Resource(
-        session: .sampleSession,
-        remote: RemoteUser.self,
-        logger: SampleLogger()
-    )
+    @State private var users = Resource(session: .sampleSession, remote: RemoteUser.self)
     @State private var didLoadList = false
     @State private var presentServerSettings = false
 
