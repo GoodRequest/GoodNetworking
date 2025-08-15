@@ -36,6 +36,7 @@
 /// ```
 import Alamofire
 import Combine
+import GoodLogger
 import Foundation
 
 public struct LoggingEventMonitor: EventMonitor, Sendable {
@@ -138,12 +139,12 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
         static let queueLabel = "com.goodrequest.networklogger"
     }
 
-    private let logger: NetworkLogger
+    private let logger: (any GoodLogger)?
 
     /// Creates a new logging monitor.
     ///
     /// - Parameter logger: The logger instance to use for output. If nil, no logging occurs.
-    public init(logger: NetworkLogger, configuration: Configuration = .init()) {
+    public init(logger: (any GoodLogger)?, configuration: Configuration = .init()) {
         self.logger = logger
         self.configuration = configuration
     }
@@ -189,9 +190,9 @@ public struct LoggingEventMonitor: EventMonitor, Sendable {
 
         switch response.result {
         case .success:
-            logger.logNetworkEvent(message: logMessage, level: .debug, fileName: #file, lineNumber: #line)
+            logger?.log(message: logMessage, level: .debug)
         case .failure:
-            logger.logNetworkEvent(message: logMessage, level: .error, fileName: #file, lineNumber: #line)
+            logger?.log(message: logMessage, level: .fault)
         }
     }
 

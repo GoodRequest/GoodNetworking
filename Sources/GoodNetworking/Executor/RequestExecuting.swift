@@ -7,6 +7,7 @@
 
 import Alamofire
 import Foundation
+import GoodLogger
 
 /// A protocol defining the interface for executing network requests.
 ///
