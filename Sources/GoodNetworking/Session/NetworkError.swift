@@ -9,21 +9,27 @@ import Foundation
 
 // MARK: - Network error
 
-/// Top level error, which can occur in all networking operations in this library.
-///
-/// The error is organized as follows:
-/// - Local errors (`URLError`): errors which affect only the local state. May contain
-/// failed networking operations, no connection errors, invalid URL errors etc.
-/// - Remote errors (``HTTPError``): errors which occured as a result of invalid operation
-/// over remote state. This contains all HTTP errors, invalid API calls etc., but also means that
-/// the request itself on network level has succeeded.
-/// - Decoding errors (`DecodingError`): errors which occured during decoding. The request
-/// has succeeded, returned a valid, success, response, but could not be decoded to a valid
-/// data type in the client.
+/// Top level error, which can occur in all networking operations in GoodNetworking.
+/// 
+/// All underlying errors are fall into three categories, which are represented
+/// by respective enum cases into local errors, remote errors and coding errors.
+/// 
+/// - Local errors (`URLError`)
+/// - Remote errors (``HTTPError``)
+/// - Decoding errors (`DecodingError`)
 public enum NetworkError: LocalizedError {
 
+    /// Errors which affect only the local state. May include failed networking
+    /// operations, no connection errors, invalid URL errors etc.
     case local(URLError)
+    
+    /// Errors which occured as a result of invalid operation over remote state.
+    /// This contains all HTTP errors, invalid API calls etc., but also means
+    /// the request has succeeded on the network layer.
     case remote(HTTPError)
+    
+    /// Errors which occured during decoding. The request has succeeded
+    /// with a valid response, but could not be decoded to any data type in the client.
     case decoding(DecodingError)
 
     public var errorDescription: String? {
@@ -38,6 +44,12 @@ public enum NetworkError: LocalizedError {
             return decodingError.localizedDescription
         }
     }
+
+}
+
+// MARK: - Network error extensions
+
+extension NetworkError {
     
     /// HTTP status code, if the error is a `remote` ``HTTPError``, or `nil` otherwise.
     ///
@@ -50,7 +62,21 @@ public enum NetworkError: LocalizedError {
             return nil
         }
     }
-
+    
+    /// Attempts decoding failure response as a decodable error structure.
+    ///
+    /// If the network error is ``local(_:)`` or ``decoding(_:)`` error,
+    /// this function returns `nil`.
+    /// If the network error is ``remote(_:)``, response data is decoded as `T`
+    /// using JSON decoder.
+    public func remote<T: Decodable & Error>(as errorType: T.Type) -> T? {
+        if case .remote(let httpError) = self {
+            return try? JSONDecoder().decode(T.self, from: httpError.errorResponse)
+        } else {
+            return nil
+        }
+    }
+    
 }
 
 // MARK: - Local error extensions
