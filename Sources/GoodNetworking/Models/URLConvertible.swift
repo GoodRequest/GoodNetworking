@@ -48,3 +48,19 @@ extension String: URLConvertible {
     }
 
 }
+
+// MARK: - Extensions
+
+extension URL {
+    
+    /// Initialize with optional string.
+    ///
+    /// Returns `nil` if a `URL` cannot be formed with the string (for example,  if the string
+    /// contains characters that are illegal in a URL, or is an empty string, or is `nil`).
+    /// - Parameter string: String containing the URL or `nil`
+    public init?(_ string: String?) {
+        guard let string else { return nil }
+        self.init(string: string)
+    }
+    
+}
