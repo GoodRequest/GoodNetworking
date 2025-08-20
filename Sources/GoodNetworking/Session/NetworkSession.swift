@@ -248,10 +248,38 @@ extension NetworkSession {
     
     @discardableResult
     public func request(endpoint: Endpoint) async throws(NetworkError) -> Data {
-        guard let basePath = await baseUrl.resolveUrl()?.absoluteString,
-              let url = await endpoint.url(on: basePath)
-        else {
-            throw URLError(.badURL).asNetworkError()
+        let endpointPath = await endpoint.path.resolveUrl()
+        let baseUrl = await baseUrl.resolveUrl()
+        let url: URL
+        
+        // Check if endpointPath is absolute
+        let endpointHasScheme: Bool = if let endpointPath,
+                                         let endpointPathScheme = endpointPath.scheme,
+                                         !endpointPathScheme.isEmpty { true } else { false }
+        
+        let endpointHasHost: Bool = if let endpointPath,
+                                       let endpointPathHost = endpointPath.host,
+                                       !endpointPathHost.isEmpty { true } else { false }
+        
+        // Check if baseUrl is resolvable
+        let baseUrlHasScheme: Bool = if let baseUrl,
+                                        let baseUrlScheme = baseUrl.scheme,
+                                        !baseUrlScheme.isEmpty { true } else { false }
+        
+        let baseUrlHasHost: Bool = if let baseUrl,
+                                      let baseUrlHost = baseUrl.host,
+                                      !baseUrlHost.isEmpty { true } else { false }
+        
+        let endpointIsAbsolutePath = endpointHasScheme && endpointHasHost
+        if endpointIsAbsolutePath, let endpointPath {
+            url = endpointPath
+        } else {
+            let endpointResolvedUrl = await endpoint.url(on: baseUrl)
+            if let endpointResolvedUrl {
+                url = endpointResolvedUrl
+            } else {
+                throw URLError(.badURL).asNetworkError()
+            }
         }
 
         // url + method
