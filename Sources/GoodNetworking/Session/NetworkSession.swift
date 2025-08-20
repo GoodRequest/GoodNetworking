@@ -212,7 +212,7 @@ extension NetworkSession {
         // handle decoding corner cases
         var decoder = JSONDecoder()
         switch T.self {
-        case is Data.Type:
+        case is Data.Type, is Optional<Data>.Type:
             return data as! T
             
         case let t as WithCustomDecoder:
