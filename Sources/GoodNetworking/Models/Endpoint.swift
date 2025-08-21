@@ -28,21 +28,23 @@ public protocol Endpoint {
     @available(*, deprecated, message: "Encoding will be automatically determined by the kind of `parameters` in the future.")
     var encoding: ParameterEncoding { get }
 
-    /// Creates a URL by combining `path` with `baseUrl`.
+    /// Creates a URL by resolving `path` over `baseUrl`.
+    ///
     /// This function is a customization point for modifying the URL by current runtime,
     /// for example for API versioning or platform separation.
+    ///
+    /// Note that this function will be only called if the ``path`` resolved
+    /// is a relative URL. If ``path`` specifies an absolute URL, it will be
+    /// used instead, without any modifications.
+    ///
     /// - Parameter baseUrl: Base URL for the request to combine with.
-    /// - Throws: If creating a concrete URL fails.
-    /// - Returns: URL for the request.
+    /// - Returns: URL for the request or `nil` if such URL cannot be constructed.
     @NetworkActor func url(on baseUrl: URLConvertible) async -> URL?
 
 }
 
-@available(*, deprecated, message: "Default values for deprecated properties")
 public extension Endpoint {
-
-    var encoding: ParameterEncoding { AutomaticEncoding.default }
-
+    
     @NetworkActor func url(on baseUrl: URLConvertible) async -> URL? {
         let baseUrl = await baseUrl.resolveUrl()
         let path = await path.resolveUrl()
@@ -50,6 +52,13 @@ public extension Endpoint {
         guard let baseUrl, let path else { return nil }
         return baseUrl.appendingPathComponent(path.absoluteString)
     }
+    
+}
+
+@available(*, deprecated, message: "Default values for deprecated properties")
+public extension Endpoint {
+
+    var encoding: ParameterEncoding { AutomaticEncoding.default }
     
 }
 
