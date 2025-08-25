@@ -1,5 +1,5 @@
 //
-//  EndpointFactory.swift
+//  EndpointBuilder.swift
 //  GoodNetworking
 //
 //  Created by Filip Šašala on 06/08/2025.
@@ -10,7 +10,7 @@ import Foundation
 /// Modified implementation of factory pattern to build
 /// endpoint as a series of function calls instead of conforming
 /// to a protocol.
-public final class EndpointFactory: Endpoint {
+public final class EndpointBuilder: Endpoint {
     
     public var path: URLConvertible
     public var method: HTTPMethod = .get
@@ -29,7 +29,7 @@ public final class EndpointFactory: Endpoint {
 
 }
 
-public extension EndpointFactory {
+public extension EndpointBuilder {
     
     func method(_ method: HTTPMethod) -> Self {
         self.method = method
@@ -82,7 +82,7 @@ public extension EndpointFactory {
     
 }
 
-private extension EndpointFactory {
+private extension EndpointBuilder {
     
     func assertBothQueryAndBodyUsage() {
         assert(self.parameters == nil, "Support for query and body parameters at the same time is currently not available.")
@@ -90,6 +90,9 @@ private extension EndpointFactory {
     
 }
 
-public func at(_ path: URLConvertible) -> EndpointFactory {
-    EndpointFactory(at: path)
+public func at(_ path: URLConvertible) -> EndpointBuilder {
+    EndpointBuilder(at: path)
 }
+
+@available(*, deprecated, renamed: "EndpointBuilder")
+public typealias EndpointFactory = EndpointBuilder

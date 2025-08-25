@@ -212,7 +212,7 @@ extension NetworkSession {
         // handle decoding corner cases
         var decoder = JSONDecoder()
         switch T.self {
-        case is Data.Type:
+        case is Data.Type, is Optional<Data>.Type:
             return data as! T
             
         case let t as WithCustomDecoder:
@@ -248,10 +248,25 @@ extension NetworkSession {
     
     @discardableResult
     public func request(endpoint: Endpoint) async throws(NetworkError) -> Data {
-        guard let basePath = await baseUrl.resolveUrl()?.absoluteString,
-              let url = await endpoint.url(on: basePath)
-        else {
-            throw URLError(.badURL).asNetworkError()
+        let endpointPath = await endpoint.path.resolveUrl()
+        let url: URL
+
+        // If endpoint already contains an absolute path, do not concatenate
+        // with baseURL and use that instead
+        if let endpointPath, endpointPath.isAbsolute {
+            url = endpointPath
+        } else {
+            // If endpoint has only relative path, resolve it over baseURL
+            let baseUrl = await baseUrl.resolveUrl()
+            let endpointResolvedUrl = await endpoint.url(on: baseUrl)
+
+            // If neither endpoint nor baseURL are specified, URL cannot be resolved
+            guard let endpointResolvedUrl else {
+                throw URLError(.badURL).asNetworkError()
+            }
+
+            // URL is resolved
+            url = endpointResolvedUrl
         }
 
         // url + method
