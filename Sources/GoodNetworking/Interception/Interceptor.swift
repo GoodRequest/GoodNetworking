@@ -51,7 +51,7 @@ public final class CompositeInterceptor: Interceptor {
     private let retriers: [Retrier]
 
     public init(
-        interceptors: [Interceptor],
+        interceptors: [Interceptor] = [],
         adapters: [Adapter] = [],
         retriers: [Retrier] = []
     ) {
