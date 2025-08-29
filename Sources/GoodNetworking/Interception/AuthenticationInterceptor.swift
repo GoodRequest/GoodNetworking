@@ -23,13 +23,14 @@ public final class AuthenticationInterceptor<AuthenticatorType: Authenticator>: 
 
     public func adapt(urlRequest: inout URLRequest) async throws(NetworkError) {
         await lock.lock()
+        defer { lock.unlock() }
+        
         if let credential = await authenticator.getCredential() {
             if let refreshableCredential = credential as? RefreshableCredential, refreshableCredential.requiresRefresh {
                 try await refresh(credential: credential)
             }
             try await authenticator.apply(credential: credential, to: &urlRequest)
         }
-        lock.unlock()
     }
 
     public func retry(urlRequest: inout URLRequest, for session: NetworkSession, dueTo error: NetworkError) async throws(NetworkError) -> RetryResult {
