@@ -50,7 +50,9 @@ public extension Endpoint {
         let path = await path.resolveUrl()
         
         guard let baseUrl, let path else { return nil }
-        return baseUrl.appendingPathComponent(path.absoluteString)
+        
+        // merge URLs as strings to avoid URL escaping
+        return URL(baseUrl.absoluteString + path.absoluteString)
     }
     
 }

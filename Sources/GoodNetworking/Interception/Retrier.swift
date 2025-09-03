@@ -17,10 +17,18 @@ public protocol Retrier: Sendable {
 
 // MARK: - Retry result
 
+/// Result of a retry operation.
+///
+/// See ``Retrier``.
 public enum RetryResult: Sendable {
 
+    /// Request will not be retried
     case doNotRetry
+    
+    /// Request will be retried only after the specified time interval has passed
     case retryAfter(TimeInterval)
+    
+    /// Request will be retried immediately
     case retry
 
 }

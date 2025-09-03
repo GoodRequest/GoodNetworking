@@ -68,6 +68,12 @@ public extension EndpointBuilder {
         return self
     }
     
+    func query(_ items: URLQueryItem...) -> Self {
+        assertBothQueryAndBodyUsage()
+        self.parameters = .query(items)
+        return self
+    }
+    
     func query(_ items: [URLQueryItem]) -> Self {
         assertBothQueryAndBodyUsage()
         self.parameters = .query(items)
