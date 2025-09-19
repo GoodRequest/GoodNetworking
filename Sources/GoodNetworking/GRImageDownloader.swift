@@ -30,7 +30,7 @@ public actor GRImageDownloader {
 
     // MARK: - Variables
 
-    static var shared: ImageDownloader?
+    nonisolated(unsafe) static var shared: ImageDownloader?
 
     // MARK: - Public
 
