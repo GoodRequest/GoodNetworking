@@ -6,8 +6,6 @@
 //
 
 import Foundation
-import Hitch
-import Sextant
 
 // MARK: - Creatable
 
@@ -242,21 +240,6 @@ public protocol Query: Readable where ReadResponse == Data {
     ///
     /// - Returns: A string representing the query.
     nonisolated static func query() -> String
-
-}
-
-public extension Query where Resource: Decodable {
-
-    /// Provides a default implementation for parsing the raw response data into a `Resource` using the query.
-    ///
-    /// This method uses the specified query to extract and decode the data from the response.
-    ///
-    /// - Parameter response: The raw response data received from the server.
-    /// - Returns: The decoded `Resource` object.
-    /// - Throws: A `NetworkError` if the parsing or decoding fails.
-    nonisolated static func resource(from response: ReadResponse, updating resource: Resource?) throws(NetworkError) -> Resource {
-        Sextant.shared.query(response, values: Hitch(string: query())) ?? .placeholder
-    }
 
 }
 
