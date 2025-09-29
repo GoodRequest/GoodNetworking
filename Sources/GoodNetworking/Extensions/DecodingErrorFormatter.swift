@@ -15,13 +15,10 @@ internal extension DecodingError {
              .valueNotFound(_, let context),
              .keyNotFound(_, let context),
              .dataCorrupted(let context):
-            """
-            ⛔️ Decoding failed - \(context.debugDescription)
-               Coding path: \(context.codingPath.prettyPrinted)
-            """
+            return "⛔️ Error while decoding \(context.codingPath.prettyPrinted) - \(context.debugDescription)"
 
         @unknown default:
-            "⛔️ Decoding failed - unknown error"
+            return "⛔️ Decoding failed - unknown error"
         }
     }
 
