@@ -227,6 +227,12 @@ extension NetworkSession {
             let model = try decoder.decode(T.self, from: data)
             return model
         } catch let error as DecodingError {
+            logger.logNetworkEvent(
+                message: error.prettyPrinted,
+                level: .error,
+                file: #file,
+                line: #line
+            )
             throw error.asNetworkError()
         } catch {
             throw URLError(.cannotDecodeRawData).asNetworkError()
