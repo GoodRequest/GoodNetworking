@@ -14,17 +14,17 @@ import Foundation
 public final class AuthenticationInterceptor<AuthenticatorType: Authenticator>: Interceptor, @unchecked Sendable {
 
     private let authenticator: AuthenticatorType
-    private let lock: AsyncLock
+    private let lock: AsyncSemaphore
 
     public init(authenticator: AuthenticatorType) {
         self.authenticator = authenticator
-        self.lock = AsyncLock()
+        self.lock = AsyncSemaphore(value: 1)
     }
 
     public func adapt(urlRequest: inout URLRequest) async throws(NetworkError) {
-        await lock.lock()
-        defer { lock.unlock() }
-        
+        await lock.wait()
+        defer { lock.signal() }
+
         if let credential = await authenticator.getCredential() {
             if let refreshableCredential = credential as? RefreshableCredential, refreshableCredential.requiresRefresh {
                 try await refresh(credential: credential)
@@ -47,8 +47,8 @@ public final class AuthenticationInterceptor<AuthenticatorType: Authenticator>: 
         // Stop further authentication with possibly invalid credential.
         // If a refresh is already in progress, stopping other requests
         // here will ensure further retries will contain the latest credentials.
-        await lock.lock()
-        defer { lock.unlock() }
+        await lock.wait()
+        defer { lock.signal() }
 
         // A credential is available
         guard let credential = await authenticator.getCredential() else {
