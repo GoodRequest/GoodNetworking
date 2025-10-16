@@ -23,10 +23,10 @@ internal extension DataTaskProxy {
         \(prepareHeaders(request: task.originalRequest))
         
         📤 Request body:
-        \(prettyPrintMessage(data: task.originalRequest?.httpBody))
+        \(prettyPrintMessage(data: task.originalRequest?.httpBody, mimeType: "json" /*We always encode to JSON*/))
         
         📦 Received data:
-        \(prettyPrintMessage(data: receivedData))
+        \(prettyPrintMessage(data: receivedData, mimeType: task.response?.mimeType))
         """
     }
 
@@ -53,9 +53,9 @@ internal extension DataTaskProxy {
         .joined(separator: "\n")
     }
 
-    @NetworkActor private func prettyPrintMessage(data: Data?) -> String {
+    @NetworkActor private func prettyPrintMessage(data: Data?, mimeType: String?) -> String {
         guard let data else { return "" }
-
+        guard plainTextMimeTypeHeuristic(mimeType) else { return "🏞️ Detected MIME type is not plain text" }
         guard data.count < Self.maxLogSizeBytes else {
             return "💡 Data size is too big (\(data.count) bytes), console limit is \(Self.maxLogSizeBytes) bytes"
         }
@@ -67,7 +67,9 @@ internal extension DataTaskProxy {
         }
         
         if let string = String(data: data, encoding: .utf8) {
-            if let jsonData = try? JSONSerialization.jsonObject(with: data, options: []),
+            let mimeContainsJson = mimeType?.contains("json")
+            if mimeContainsJson ?? true,
+               let jsonData = try? JSONSerialization.jsonObject(with: data, options: []),
                let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonData, options: serializationOptions),
                let prettyPrintedString = String(data: prettyPrintedData, encoding: .utf8) {
                 return prettyPrintedString
@@ -77,6 +79,27 @@ internal extension DataTaskProxy {
         }
 
         return "🔍 Couldn't decode data as UTF-8"
+    }
+
+    @NetworkActor private func plainTextMimeTypeHeuristic(_ mimeType: String?) -> Bool {
+        guard let mimeType else { return false }
+
+        let knownPlainTextMimeTypes = ["javascript", "yaml", "toml", "sql", "graphql", "markdown", "urlencoded"]
+
+        let isTextMimeType = mimeType.hasPrefix("text/")
+        let isXml = mimeType.hasSuffix("+xml") || mimeType.contains("xml")
+        let isJson = mimeType.hasSuffix("+json") || mimeType.contains("json")
+        let isTextBased = mimeType.containsOneOf(knownPlainTextMimeTypes)
+
+        return isTextMimeType || isXml || isJson || isTextBased
+    }
+
+}
+
+extension String {
+
+    func containsOneOf(_ strings: [String]) -> Bool {
+        strings.contains { self.contains($0) }
     }
 
 }
