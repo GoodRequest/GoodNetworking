@@ -23,7 +23,7 @@ internal extension DataTaskProxy {
         \(prepareHeaders(request: task.originalRequest))
         
         📤 Request body:
-        \(prettyPrintMessage(data: task.originalRequest?.httpBody, mimeType: "json" /*We always encode to JSON*/))
+        \(prettyPrintMessage(data: task.originalRequest?.httpBody))
         
         📦 Received data:
         \(prettyPrintMessage(data: receivedData, mimeType: task.response?.mimeType))
@@ -53,7 +53,7 @@ internal extension DataTaskProxy {
         .joined(separator: "\n")
     }
 
-    @NetworkActor private func prettyPrintMessage(data: Data?, mimeType: String?) -> String {
+    @NetworkActor private func prettyPrintMessage(data: Data?, mimeType: String? = "text/plain") -> String {
         guard let data else { return "" }
         guard plainTextMimeTypeHeuristic(mimeType) else { return "🏞️ Detected MIME type is not plain text" }
         guard data.count < Self.maxLogSizeBytes else {
