@@ -18,8 +18,6 @@ import Foundation
     
     private static let executor: NetworkActorExecutor = NetworkActorExecutor()
     
-    // MARK: - Properties
-    
     // MARK: - Computed properties
     
     public nonisolated var unownedExecutor: UnownedSerialExecutor {
@@ -37,9 +35,15 @@ import Foundation
     ) rethrows -> sending T {
         typealias YesActor = @NetworkActor () throws -> sending T
         typealias NoActor = () throws -> sending T
-        
-        NetworkActor.preconditionIsolated()
-        
+
+        if #available(iOS 18, *) {
+            NetworkActor.preconditionIsolated()
+        } else {
+            // manual call to checkIsolated() as Swift runtime doesn't
+            // support custom implementation before iOS 18/26
+            executor.checkIsolated()
+        }
+
         return try withoutActuallyEscaping(block) { (_ fn: @escaping YesActor) throws -> sending T in
             try unsafeBitCast(fn, to: NoActor.self)()
         }

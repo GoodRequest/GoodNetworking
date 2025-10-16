@@ -67,7 +67,7 @@ import Foundation
         self.configuration = configuration
         self.delegateQueue = operationQueue
 
-        // create URLSession lazily, isolated on @NetworkActor, when requested first time
+        // create URLSession lazily, isolated to @NetworkActor, when requested first time
 
         super.init()
     }
