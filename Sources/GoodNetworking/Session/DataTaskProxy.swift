@@ -54,12 +54,14 @@ import Foundation
             self.receivedError = URLError(.unknown)
         }
 
-        logger.logNetworkEvent(
-            message: prepareRequestInfo(),
-            level: receivedError == nil ? .debug : .warning,
-            file: #file,
-            line: #line
-        )
+        Task { @NetworkActor in
+            logger.logNetworkEvent(
+                message: prepareRequestInfo(),
+                level: receivedError == nil ? .debug : .warning,
+                file: #file,
+                line: #line
+            )
+        }
 
         continuation?.resume()
         continuation = nil
