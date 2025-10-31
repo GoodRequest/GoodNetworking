@@ -29,6 +29,7 @@ import Foundation
     private let sessionHeaders: HTTPHeaders
     private let interceptor: any Interceptor
     private let logger: any NetworkLogger
+    private let certificate: any Certificate
 
     private let configuration: URLSessionConfiguration
     private let delegateQueue: OperationQueue
@@ -49,6 +50,7 @@ import Foundation
         baseHeaders: HTTPHeaders = [],
         interceptor: any Interceptor = DefaultInterceptor(),
         logger: any NetworkLogger = PrintNetworkLogger(),
+        certificate: any Certificate = NoPinnedCertificate(),
         name: String? = nil
     ) {
         self.name = name ?? "NetworkSession"
@@ -57,6 +59,7 @@ import Foundation
         self.sessionHeaders = baseHeaders
         self.interceptor = interceptor
         self.logger = logger
+        self.certificate = certificate
 
         let operationQueue = OperationQueue()
         operationQueue.name = "NetworkActorSerialExecutorOperationQueue"
@@ -90,6 +93,14 @@ internal extension NetworkSession {
         self.activeTasks.removeValue(forKey: task.taskIdentifier)
     }
 
+    func getPinnedCertificate() -> any Certificate {
+        self.certificate
+    }
+
+    func getLogger() -> any NetworkLogger {
+        self.logger
+    }
+
 }
 
 // MARK: - Network session delegate
@@ -106,37 +117,89 @@ final class NetworkSessionDelegate: NSObject {
 
 extension NetworkSessionDelegate: URLSessionDelegate {
 
+    /// SSL Pinning: Compare server certificate with local (pinned) certificate
+    /// https://developer.apple.com/documentation/foundation/performing-manual-server-trust-authentication
     public func urlSession(
         _ session: URLSession,
         didReceive challenge: URLAuthenticationChallenge,
         completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
     ) {
-//        // SSL Pinning: Compare server certificate with local (pinned) certificate
-//        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
-//              let serverTrust = challenge.protectionSpace.serverTrust,
-//              let serverCertificate = SecTrustGetCertificateAtIndex(serverTrust, 0),
-//              let pinnedCertificateData = Self.pinnedCertificateData()
-//        else {
-//            completionHandler(.cancelAuthenticationChallenge, nil)
-//            return
-//        }
-//
-//        // Extract server certificate data
-//        let serverCertificateData = SecCertificateCopyData(serverCertificate) as Data
-//
-//        if serverCertificateData == pinnedCertificateData {
-//            let credential = URLCredential(trust: serverTrust)
-//            completionHandler(.useCredential, credential)
-//        } else {
-//            completionHandler(.cancelAuthenticationChallenge, nil)
-//        }
-        
-        #warning("TODO: Enable SSL pinning")
-        // https://developer.apple.com/documentation/foundation/performing-manual-server-trust-authentication
-        
-        // remove
-        completionHandler(.performDefaultHandling, nil)
+        /// Mark completionHandler as isolated to ``NetworkActor``.
+        ///
+        /// This delegate function is always called on NetworkActor's operation queue, but is marked as `nonisolated`. Completion handler
+        /// would usually be called on the same thread.
+        ///
+        /// NetworkSessionDelegate cannot conform to `URLSessionDelegate` on `@NetworkActor` because of erroneous
+        /// `Sendable Self` requirement preventing marking the conformance .
+        typealias YesActor = @NetworkActor (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        typealias NoActor = (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+        let completionHandler = unsafeBitCast(completionHandler as NoActor, to: YesActor.self)
+
+        Task { @NetworkActor in
+            // Evaluate only SSL/TLS certificates
+            guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust else {
+                completionHandler(.performDefaultHandling, nil)
+                return
+            }
+
+            guard let serverTrust = challenge.protectionSpace.serverTrust else {
+                completionHandler(.performDefaultHandling, nil)
+                return
+            }
+
+            // Load and validate local certificate
+            let error: (any Error)?
+            let certificateDisposition: CertificateDisposition?
+            do {
+                certificateDisposition = try await networkSession.getPinnedCertificate()
+                    .certificateDisposition(using: serverTrust)
+                error = nil
+            } catch let certificateError {
+                certificateDisposition = nil
+                error = certificateError
+            }
+
+            switch certificateDisposition {
+            case .evaluate(let certificates):
+                // Set local certificate as serverTrust anchor
+                SecTrustSetAnchorCertificates(serverTrust, certificates as CFArray)
+                SecTrustSetAnchorCertificatesOnly(serverTrust, true)
+
+                // Evaluate certificate chain manually
+                var error: CFError?
+                let trusted = SecTrustEvaluateWithError(serverTrust, &error)
+                if trusted {
+                    let credential = URLCredential(trust: serverTrust)
+                    completionHandler(.useCredential, credential)
+                } else {
+                    completionHandler(.cancelAuthenticationChallenge, nil)
+                }
+
+            case .useSystemTrustEvaluation:
+                completionHandler(.performDefaultHandling, nil)
+
+            case .deny(let reason):
+                networkSession.getLogger().logNetworkEvent(
+                    message: reason,
+                    level: .error,
+                    file: #file,
+                    line: #line
+                )
+
+                completionHandler(.cancelAuthenticationChallenge, nil)
+
+            // call throws
+            case .none:
+                networkSession.getLogger().logNetworkEvent(
+                    message: error?.localizedDescription ?? "nil",
+                    level: .error,
+                    file: #file,
+                    line: #line
+                )
+            }
+        }
     }
+
 }
 
 extension NetworkSessionDelegate: URLSessionTaskDelegate {
