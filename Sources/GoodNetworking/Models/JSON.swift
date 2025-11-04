@@ -76,8 +76,12 @@ import Foundation
     ///   - data: Raw `Data` of JSON object
     ///   - options: Optional serialization options
     public init(data: Data, options: JSONSerialization.ReadingOptions = .allowFragments) throws {
-        let object = try JSONSerialization.jsonObject(with: data, options: options)
-        self = JSON(object)
+        if data.isEmpty {
+            self = JSON.null
+        } else {
+            let object = try JSONSerialization.jsonObject(with: data, options: options)
+            self = JSON(object)
+        }
     }
     
     /// Create JSON from an encodable model, for example to be sent between
