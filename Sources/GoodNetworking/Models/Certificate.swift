@@ -16,7 +16,7 @@ import Foundation
 /// - SSL pinning by validating certificates or public keys
 /// - Trusting self-signed certificates
 /// - Fallback to system trust evaluation
-public enum CertificateDisposition {
+public enum CertificateDisposition: Sendable {
 
     /// Evaluate trust using the provided certificate(s).
     ///
