@@ -45,7 +45,14 @@ public extension EndpointBuilder {
         self.headers?.headers.append(contentsOf: headers.headers)
         return self
     }
-    
+
+    func header(_ headerConvertible: any HeaderConvertible) -> Self {
+        if let header = headerConvertible.resolveHeader() {
+            self.headers?.add(header: header)
+        }
+        return self
+    }
+
     func body(data: Data?) -> Self {
         assertBothQueryAndBodyUsage()
         if let data {
