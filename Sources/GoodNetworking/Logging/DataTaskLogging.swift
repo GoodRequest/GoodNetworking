@@ -31,14 +31,21 @@ internal extension DataTaskProxy {
     }
 
     @NetworkActor private func prepareResponseStatus(response: URLResponse?, error: (any Error)?) -> String {
-        guard let response = response as? HTTPURLResponse else { return "" }
+        var errorMessage: String?
+        if error != nil {
+            errorMessage = "🚨 Error: \(error?.localizedDescription ?? "<nil>")"
+        }
+
+        guard let response = response as? HTTPURLResponse else {
+            return errorMessage ?? "⁉️ Response not received, error not available."
+        }
         let statusCode = response.statusCode
 
         var logMessage = (200 ..< 300).contains(statusCode) ? "✅ \(statusCode): " : "❌ \(statusCode): "
         logMessage.append(HTTPURLResponse.localizedString(forStatusCode: statusCode))
 
-        if error != nil {
-            logMessage.append("\n🚨 Error: \(error?.localizedDescription ?? "<nil>")")
+        if let errorMessage {
+            logMessage.append("\n\(errorMessage)")
         }
 
         return logMessage
@@ -54,7 +61,7 @@ internal extension DataTaskProxy {
     }
 
     @NetworkActor private func prettyPrintMessage(data: Data?, mimeType: String? = "text/plain") -> String {
-        guard let data else { return "" }
+        guard let data, !data.isEmpty else { return "" }
         guard plainTextMimeTypeHeuristic(mimeType) else { return "🏞️ Detected MIME type is not plain text" }
         guard data.count < Self.maxLogSizeBytes else {
             return "💡 Data size is too big (\(data.count) bytes), console limit is \(Self.maxLogSizeBytes) bytes"

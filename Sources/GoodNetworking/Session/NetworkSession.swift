@@ -180,7 +180,7 @@ extension NetworkSessionDelegate: URLSessionDelegate {
 
             case .deny(let reason):
                 networkSession.getLogger().logNetworkEvent(
-                    message: reason,
+                    message: reason ?? "Denied for unspecified reasons",
                     level: .error,
                     file: #file,
                     line: #line
