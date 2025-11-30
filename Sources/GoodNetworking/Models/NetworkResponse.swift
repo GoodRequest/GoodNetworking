@@ -9,7 +9,7 @@ import Foundation
 
 /// Wraps the payload returned from `URLSession` with
 /// metadata describing the HTTP response.
-public struct NetworkResponse {
+public struct NetworkResponse: Sendable {
 
     /// Raw body returned by the server.
     public let body: Data
