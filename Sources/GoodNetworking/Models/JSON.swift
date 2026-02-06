@@ -71,7 +71,8 @@ import Foundation
     
     // MARK: - Initializers
     
-    /// Create JSON from raw `Data`
+    /// Create JSON from raw `Data`.
+    ///
     /// - Parameters:
     ///   - data: Raw `Data` of JSON object
     ///   - options: Optional serialization options
@@ -90,8 +91,9 @@ import Foundation
     ///   - model: `Encodable` model
     ///   - encoder: Encoder for encoding the model
     public init(encodable model: any Encodable, encoder: JSONEncoder) {
-        if let data = try? encoder.encode(model), let converted = try? JSON(data: data) {
-            self = converted
+        if let data = try? encoder.encode(model),
+           let jsonData = try? JSON(data: data) {
+            self = jsonData
         } else {
             self = JSON.null
         }
@@ -105,20 +107,20 @@ import Foundation
     ///
     /// - Parameter object: Object to try to represent as JSON
     public init(_ object: Any) {
-        if let data = object as? Data, let converted = try? JSON(data: data) {
-            self = converted
-        } else if let model = object as? any Encodable, let data = try? JSONEncoder().encode(model), let converted = try? JSON(data: data) {
-            self = converted
+        if let data = object as? Data, let jsonData = try? JSON(data: data) {
+            self = jsonData
+        } else if let model = object as? any Encodable, let data = try? JSONEncoder().encode(model), let jsonData = try? JSON(data: data) {
+            self = jsonData
         } else if let dictionary = object as? [String: Any] {
             self = JSON.dictionary(dictionary.mapValues { JSON($0) })
         } else if let array = object as? [Any] {
             self = JSON.array(array.map { JSON($0) })
         } else if let string = object as? String {
             self = JSON.string(string)
-        } else if let bool = object as? Bool {
-            self = JSON.bool(bool)
         } else if let number = object as? NSNumber {
             self = JSON.number(number)
+        } else if let bool = object as? Bool {
+            self = JSON.bool(bool)
         } else if let json = object as? JSON {
             self = json
         } else {

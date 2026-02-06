@@ -143,20 +143,20 @@ public enum EndpointParameters {
 
 // MARK: - Compatibility
 
-@available(*, deprecated)
+@available(*, deprecated, message: "Encoding will be automatically determined by the kind of `parameters` in the future.")
 public protocol ParameterEncoding {}
 
-@available(*, deprecated)
+@available(*, deprecated, message: "Encoding will be automatically determined by the kind of `parameters` in the future.")
 public enum URLEncoding: ParameterEncoding {
     case `default`
 }
 
-@available(*, deprecated)
+@available(*, deprecated, message: "Encoding will be automatically determined by the kind of `parameters` in the future.")
 public enum JSONEncoding: ParameterEncoding {
     case `default`
 }
 
-@available(*, deprecated)
+@available(*, deprecated, message: "Encoding will be automatically determined by the kind of `parameters` in the future.")
 public enum AutomaticEncoding: ParameterEncoding {
     case `default`
 }

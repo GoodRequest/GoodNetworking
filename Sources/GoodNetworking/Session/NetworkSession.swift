@@ -180,7 +180,7 @@ extension NetworkSessionDelegate: URLSessionDelegate {
 
             case .deny(let reason):
                 networkSession.getLogger().logNetworkEvent(
-                    message: reason,
+                    message: reason ?? "Denied for unspecified reasons",
                     level: .error,
                     file: #file,
                     line: #line
@@ -270,7 +270,8 @@ extension NetworkSession {
     }
 
     public func request<T: Decodable>(endpoint: Endpoint) async throws(NetworkError) -> T {
-        let data = try await request(endpoint: endpoint) as Data
+        let response: NetworkResponse = try await request(endpoint: endpoint)
+        let data = response.body
 
         // handle decoding corner cases
         var decoder = JSONDecoder()
@@ -306,8 +307,8 @@ extension NetworkSession {
     
     @_disfavoredOverload
     public func request(endpoint: Endpoint) async throws(NetworkError) -> JSON {
-        let responseData = try await request(endpoint: endpoint) as Data
-        guard let json = try? JSON(data: responseData) else {
+        let response: NetworkResponse = try await request(endpoint: endpoint)
+        guard let json = try? JSON(data: response.body) else {
             throw URLError(.cannotDecodeRawData).asNetworkError()
         }
         return json
@@ -316,7 +317,7 @@ extension NetworkSession {
     // MARK: Raw
     
     @discardableResult
-    public func request(endpoint: Endpoint) async throws(NetworkError) -> Data {
+    public func request(endpoint: Endpoint) async throws(NetworkError) -> NetworkResponse {
         let endpointPath = await endpoint.path.resolveUrl()
         let url: URL
 
@@ -413,7 +414,7 @@ extension NetworkSession {
 
 private extension NetworkSession {
 
-    func executeRequest(request: inout URLRequest) async throws(NetworkError) -> Data {
+    func executeRequest(request: inout URLRequest) async throws(NetworkError) -> NetworkResponse {
         // Content type
         let httpMethodSupportsBody = request.method.hasRequestBody
         let httpMethodHasBody = (request.httpBody != nil)
@@ -450,17 +451,19 @@ private extension NetworkSession {
         do {
             let data = try await dataTaskProxy.data()
             closeProxyForTask(dataTask)
-            
+
             let validator = DefaultValidationProvider()
-            let statusCode = (dataTask.response as? HTTPURLResponse)?.statusCode ?? -1
+            let response = dataTask.response
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
+            
             try validator.validate(statusCode: statusCode, data: data)
-            return data
+            return NetworkResponse(data: data, response: response)
         } catch let networkError {
             return try await retryRequest(request: &request, error: networkError)
         }
     }
 
-    func retryRequest(request: inout URLRequest, error networkError: NetworkError) async throws(NetworkError) -> Data {
+    func retryRequest(request: inout URLRequest, error networkError: NetworkError) async throws(NetworkError) -> NetworkResponse {
         let retryResult = try await interceptor.retry(urlRequest: &request, for: self, dueTo: networkError)
 
         switch retryResult {
