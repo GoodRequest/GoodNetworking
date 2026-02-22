@@ -279,8 +279,8 @@ extension NetworkSession {
         case is Data.Type, is Optional<Data>.Type:
             return data as! T
             
-        case let t as WithCustomDecoder:
-            decoder = type(of: t).decoder
+        case let t as WithCustomDecoder.Type:
+            decoder = t.decoder
             
         default:
             break
