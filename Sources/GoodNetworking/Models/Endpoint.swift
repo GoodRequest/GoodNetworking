@@ -116,7 +116,13 @@ public enum EndpointParameters {
                         
         case .model(let codableModel):
             do {
-                let encoder = JSONEncoder()
+                let encoder: JSONEncoder
+                if let customEncodable = codableModel as? WithCustomEncoder {
+                    encoder = type(of: customEncodable).encoder
+                } else {
+                    encoder = JSONEncoder()
+                }
+
                 return try encoder.encode(codableModel)
             } catch {
                 throw URLError(.cannotEncodeRawData).asNetworkError()
