@@ -196,6 +196,8 @@ extension NetworkSessionDelegate: URLSessionDelegate {
                     file: #file,
                     line: #line
                 )
+
+                completionHandler(.cancelAuthenticationChallenge, nil)
             }
         }
     }
