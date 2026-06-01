@@ -306,14 +306,11 @@ extension NetworkSession {
     }
     
     // MARK: JSON
-    
+
+    @available(*, deprecated, message: "JSON conforms to Codable; use generic interfaces instead")
     @_disfavoredOverload
     public func request(endpoint: Endpoint) async throws(NetworkError) -> JSON {
-        let response: NetworkResponse = try await request(endpoint: endpoint)
-        guard let json = try? JSON(data: response.body) else {
-            throw URLError(.cannotDecodeRawData).asNetworkError()
-        }
-        return json
+        try await request(endpoint: endpoint) as JSON
     }
     
     // MARK: Raw

@@ -68,10 +68,11 @@ public extension EndpointBuilder {
         self.parameters = .model(model)
         return self
     }
-    
+
+    @available(*, deprecated, renamed: "body(model:)", message: "JSON conforms to Codable; use generic interfaces instead")
     func body(json: JSON) -> Self {
         assertBothQueryAndBodyUsage()
-        self.parameters = .json(json)
+        self.parameters = .model(json)
         return self
     }
     

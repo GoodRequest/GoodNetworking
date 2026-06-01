@@ -71,7 +71,7 @@ public extension Endpoint {
 public enum EndpointParameters {
 
     /// Case for sending `Parameters`.
-    @available(*, deprecated, renamed: "json", message: "Use JSON instead of raw dictionaries")
+    @available(*, deprecated, renamed: "model", message: "Use model(JSON) instead of raw dictionaries")
     case parameters([String: Any])
 
     case query([URLQueryItem])
@@ -79,8 +79,6 @@ public enum EndpointParameters {
     case model(Encodable)
     
     case data(Data)
-    
-    case json(JSON)
 
     public var dictionary: JSON? {
         switch self {
@@ -103,9 +101,6 @@ public enum EndpointParameters {
             
         case .data(let data):
             return try? JSON(data: data)
-            
-        case .json(let json):
-            return json
         }
     }
 
@@ -130,9 +125,6 @@ public enum EndpointParameters {
             
         case .data(let data):
             return data
-            
-        case .json(let json):
-            return json.data()
         }
     }
 
