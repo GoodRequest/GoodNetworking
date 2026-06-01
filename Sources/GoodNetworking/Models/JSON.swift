@@ -117,10 +117,14 @@ import Foundation
             self = JSON.array(array.map { JSON($0) })
         } else if let string = object as? String {
             self = JSON.string(string)
-        } else if let number = object as? NSNumber {
-            self = JSON.number(number)
-        } else if let bool = object as? Bool {
+        } else if let bool = object as? Bool, !(object is NSNumber) {
             self = JSON.bool(bool)
+        } else if let number = object as? NSNumber {
+            if number.isBool {
+                self = JSON.bool(number.boolValue)
+            } else {
+                self = JSON.number(number)
+            }
         } else if let json = object as? JSON {
             self = json
         } else {
@@ -350,4 +354,24 @@ extension JSON: Swift.CustomStringConvertible, Swift.CustomDebugStringConvertibl
         return description
     }
     
+}
+
+// MARK: - NSNumber handling
+
+private extension NSNumber {
+
+    var isBool: Bool {
+        CFGetTypeID(self) == CFBooleanGetTypeID()
+    }
+
+    var isFloatingPoint: Bool {
+        let type = String(cString: objCType)
+        return type == "f" || type == "d"
+    }
+
+    var isSignedInteger: Bool {
+        let type = String(cString: objCType)
+        return ["c", "s", "i", "l", "q"].contains(type)
+    }
+
 }
