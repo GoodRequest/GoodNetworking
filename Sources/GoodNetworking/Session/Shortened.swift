@@ -36,11 +36,13 @@ extension NetworkSession {
     }
     
     // Raw
-    
+
+    @discardableResult
     public func post<T: Encodable>(_ path: URLConvertible, _ model: T) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.post).body(model: model))
     }
-    
+
+    @discardableResult
     public func post(_ path: URLConvertible, data: Data?) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.post).body(data: data))
     }
@@ -62,11 +64,13 @@ extension NetworkSession {
     }
     
     // Raw
-    
+
+    @discardableResult
     public func put<T: Encodable>(_ path: URLConvertible, _ model: T) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.put).body(model: model))
     }
-    
+
+    @discardableResult
     public func put(_ path: URLConvertible, data: Data?) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.put).body(data: data))
     }
@@ -88,11 +92,13 @@ extension NetworkSession {
     }
 
     // Raw
-    
+
+    @discardableResult
     public func patch<T: Encodable>(_ path: URLConvertible, _ model: T) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.patch).body(model: model))
     }
-    
+
+    @discardableResult
     public func patch(_ path: URLConvertible, data: Data?) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.patch).body(data: data))
     }
@@ -114,11 +120,13 @@ extension NetworkSession {
     }
     
     // Raw
-    
+
+    @discardableResult
     public func delete<T: Encodable>(_ path: URLConvertible, _ model: T) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.delete).body(model: model))
     }
-    
+
+    @discardableResult
     public func delete(_ path: URLConvertible, data: Data?) async throws(NetworkError) -> Data {
         return try await request(endpoint: at(path).method(.delete).body(data: data))
     }
