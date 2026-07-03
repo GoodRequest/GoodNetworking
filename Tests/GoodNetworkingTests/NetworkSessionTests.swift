@@ -8,8 +8,6 @@
 @testable import GoodNetworking
 import Testing
 import Foundation
-import Sextant
-import Hitch
 
 let session = NetworkSession(baseUrl: "https://dummyjson.com")
 
@@ -126,8 +124,8 @@ struct ProductsResponse: Decodable {
         "age": 30
     ] as JSON
     
-    _ = try await session.post("/users", newUser) as JSON
-    _ = try await session.post("/users", newUserJson) as JSON
+    _ = try await session.post("/users/add", newUser) as JSON
+    _ = try await session.post("/users/add", newUserJson) as JSON
 }
 
 struct NewUserRequest: Encodable {
