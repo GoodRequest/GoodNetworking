@@ -107,7 +107,9 @@ import Foundation
     ///
     /// - Parameter object: Object to try to represent as JSON
     public init(_ object: Any) {
-        if let data = object as? Data, let jsonData = try? JSON(data: data) {
+        if let jsonData = object as? JSON {
+            self = jsonData
+        } else if let data = object as? Data, let jsonData = try? JSON(data: data) {
             self = jsonData
         } else if let model = object as? any Encodable, let data = try? JSONEncoder().encode(model), let jsonData = try? JSON(data: data) {
             self = jsonData
@@ -117,17 +119,19 @@ import Foundation
             self = JSON.array(array.map { JSON($0) })
         } else if let string = object as? String {
             self = JSON.string(string)
-        } else if let number = object as? NSNumber {
-            self = JSON.number(number)
-        } else if let bool = object as? Bool {
+        } else if let bool = object as? Bool, !(object is NSNumber) {
             self = JSON.bool(bool)
-        } else if let json = object as? JSON {
-            self = json
+        } else if let number = object as? NSNumber {
+            if number.isBool {
+                self = JSON.bool(number.boolValue)
+            } else {
+                self = JSON.number(number)
+            }
         } else {
             self = JSON.null
         }
     }
-    
+
     // MARK: - Accessors
     
     /// Access the JSON value as a dictionary
@@ -350,4 +354,142 @@ extension JSON: Swift.CustomStringConvertible, Swift.CustomDebugStringConvertibl
         return description
     }
     
+}
+
+// MARK: - Decodable
+
+extension JSON: Decodable {
+
+    public init(from decoder: Decoder) throws {
+        // top level is dictionary (most cases)
+        if let container = try? decoder.container(keyedBy: DynamicJSONCodingKey.self) {
+            var dictionary: [String: JSON] = [:]
+
+            for key in container.allKeys {
+                dictionary[key.stringValue] = try container.decode(JSON.self, forKey: key)
+            }
+
+            self = .dictionary(dictionary)
+            return
+        }
+
+        // top level is array
+        if var container = try? decoder.unkeyedContainer() {
+            var array: [JSON] = []
+
+            while !container.isAtEnd {
+                array.append(try container.decode(JSON.self))
+            }
+
+            self = .array(array)
+            return
+        }
+
+        // top level is only single value (uncommon)
+        let container = try decoder.singleValueContainer()
+        if container.decodeNil() {
+            self = .null
+        } else if let value = try? container.decode(Bool.self) {
+            self = .bool(value)
+        } else if let value = try? container.decode(Int64.self) {
+            self = .number(NSNumber(value: value))
+        } else if let value = try? container.decode(UInt64.self) {
+            self = .number(NSNumber(value: value))
+        } else if let value = try? container.decode(Double.self) {
+            self = .number(NSNumber(value: value))
+        } else if let value = try? container.decode(String.self) {
+            self = .string(value)
+        } else {
+            self = .null
+        }
+    }
+
+}
+
+// MARK: - Encodable
+
+extension JSON: Encodable {
+
+    public func encode(to encoder: Encoder) throws {
+        switch self {
+        case .dictionary(let dictionary):
+            var container = encoder.container(keyedBy: DynamicJSONCodingKey.self)
+
+            for (key, value) in dictionary {
+                try container.encode(value, forKey: DynamicJSONCodingKey(stringValue: key))
+            }
+
+        case .array(let array):
+            var container = encoder.unkeyedContainer()
+
+            for value in array {
+                try container.encode(value)
+            }
+
+        case .string(let string):
+            var container = encoder.singleValueContainer()
+            try container.encode(string)
+
+        case .number(let number):
+            var container = encoder.singleValueContainer()
+
+            if number.isBool {
+                try container.encode(number.boolValue)
+            } else if number.isFloatingPoint {
+                try container.encode(number.doubleValue)
+            } else if number.isSignedInteger {
+                try container.encode(number.int64Value)
+            } else {
+                try container.encode(number.uint64Value)
+            }
+
+        case .bool(let bool):
+            var container = encoder.singleValueContainer()
+            try container.encode(bool)
+
+        case .null:
+            var container = encoder.singleValueContainer()
+            try container.encodeNil()
+        }
+    }
+
+}
+
+// MARK: - Coding key
+
+private struct DynamicJSONCodingKey: CodingKey {
+
+    let stringValue: String
+    let intValue: Int?
+
+    init(stringValue: String) {
+        self.stringValue = stringValue
+        self.intValue = nil
+    }
+
+    init(intValue: Int) {
+        self.stringValue = String(intValue)
+        self.intValue = intValue
+    }
+
+}
+
+// MARK: - NSNumber handling
+
+private extension NSNumber {
+
+    var isBool: Bool {
+        CFGetTypeID(self) == CFBooleanGetTypeID()
+    }
+
+    var isFloatingPoint: Bool {
+        let type = String(cString: objCType)
+        return type == "f" || type == "d"
+    }
+
+    var isSignedInteger: Bool {
+        let type = String(cString: objCType)
+        return ["c", "s", "i", "l", "q"].contains(type)
+    }
+
 }

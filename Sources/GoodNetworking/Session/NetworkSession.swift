@@ -196,6 +196,8 @@ extension NetworkSessionDelegate: URLSessionDelegate {
                     file: #file,
                     line: #line
                 )
+
+                completionHandler(.cancelAuthenticationChallenge, nil)
             }
         }
     }
@@ -279,8 +281,8 @@ extension NetworkSession {
         case is Data.Type, is Optional<Data>.Type:
             return data as! T
             
-        case let t as WithCustomDecoder:
-            decoder = type(of: t).decoder
+        case let t as WithCustomDecoder.Type:
+            decoder = t.decoder
             
         default:
             break
@@ -304,14 +306,11 @@ extension NetworkSession {
     }
     
     // MARK: JSON
-    
+
+    @available(*, deprecated, message: "JSON conforms to Codable; use generic interfaces instead")
     @_disfavoredOverload
     public func request(endpoint: Endpoint) async throws(NetworkError) -> JSON {
-        let response: NetworkResponse = try await request(endpoint: endpoint)
-        guard let json = try? JSON(data: response.body) else {
-            throw URLError(.cannotDecodeRawData).asNetworkError()
-        }
-        return json
+        try await request(endpoint: endpoint) as JSON
     }
     
     // MARK: Raw
@@ -348,62 +347,8 @@ extension NetworkSession {
             request.setValue(header.value, forHTTPHeaderField: header.name)
         }
         
-        // encoding
-        switch endpoint.parameters {
-        case .parameters(let parameters):
-            if endpoint.encoding is URLEncoding {
-                applyQueryParameters(to: &request, endpoint, url)
-            } else if endpoint.encoding is JSONEncoding {
-                logger.logNetworkEvent(
-                    message: "Attempt to encode dictionary as body, use JSON or Encodable instead",
-                    level: .error,
-                    file: #file,
-                    line: #line
-                )
-                request.httpBody = try endpoint.parameters?.data()
-            } else if endpoint.encoding is AutomaticEncoding {
-                request.httpBody = try endpoint.parameters?.data()
-            }
-            
-        case .query(let queryItems):
-            if endpoint.encoding is URLEncoding {
-                applyQueryParameters(to: &request, endpoint, url)
-            } else if endpoint.encoding is JSONEncoding {
-                preconditionFailure("Attempt to encode query parameters as JSON body")
-            } else if endpoint.encoding is AutomaticEncoding {
-                applyQueryParameters(to: &request, endpoint, url)
-            }
-            
-        case .model(let encodableModel):
-            if endpoint.encoding is URLEncoding {
-                applyQueryParameters(to: &request, endpoint, url)
-            } else if endpoint.encoding is JSONEncoding {
-                request.httpBody = try endpoint.parameters?.data()
-            } else if endpoint.encoding is AutomaticEncoding {
-                request.httpBody = try endpoint.parameters?.data()
-            }
-            
-        case .data(let data):
-            if endpoint.encoding is URLEncoding {
-                preconditionFailure("Encoding raw data into query is not supported")
-            } else if endpoint.encoding is JSONEncoding {
-                request.httpBody = try endpoint.parameters?.data()
-            } else if endpoint.encoding is AutomaticEncoding {
-                request.httpBody = try endpoint.parameters?.data()
-            }
-            
-        case .json(let json):
-            if endpoint.encoding is URLEncoding {
-                applyQueryParameters(to: &request, endpoint, url)
-            } else if endpoint.encoding is JSONEncoding {
-                request.httpBody = try endpoint.parameters?.data()
-            } else if endpoint.encoding is AutomaticEncoding {
-                request.httpBody = try endpoint.parameters?.data()
-            }
-            
-        case .none:
-            request.httpBody = nil
-        }
+        // encoding parameters
+        try applyParameters(to: &request, endpoint, url)
 
         return try await executeRequest(request: &request)
     }
@@ -482,8 +427,49 @@ private extension NetworkSession {
             return try await self.executeRequest(request: &request)
         }
     }
-    
-    @available(*, deprecated, message: "Unify parameter handling")
+
+    private func applyParameters(
+        to request: inout URLRequest,
+        _ endpoint: any Endpoint,
+        _ url: URL,
+    ) throws(NetworkError) {
+        if case .none = endpoint.parameters {
+            request.httpBody = nil
+            return
+        }
+        if endpoint.encoding is URLEncoding {
+            if case .data = endpoint.parameters {
+                let message = "Encoding raw data into query is not supported"
+                logger.logNetworkEvent(message: message, level: .error, file: #file, line: #line)
+                throw NetworkError.local(URLError(.cannotEncodeRawData))
+            }
+            applyQueryParameters(to: &request, endpoint, url)
+        } else if endpoint.encoding is JSONEncoding {
+            if case .query = endpoint.parameters {
+                let message = "Attempt to encode query parameters as JSON body"
+                logger.logNetworkEvent(message: message, level: .error, file: #file, line: #line)
+                throw NetworkError.local(URLError(.cannotEncodeRawData))
+            }
+            if endpoint.method.hasRequestBody {
+                try applyBodyParameters(to: &request, endpoint, url)
+            } else {
+                let message = "Attempted to encode body for request that does not allow a request body"
+                logger.logNetworkEvent(message: message, level: .error, file: #file, line: #line)
+                throw NetworkError.local(URLError(.cannotEncodeRawData))
+            }
+        } else { // AutomaticEncoding or not specified
+            if endpoint.method.hasRequestBody { // Apply request body if available
+                try applyBodyParameters(to: &request, endpoint, url)
+            } else { // else apply as query
+                applyQueryParameters(to: &request, endpoint, url)
+            }
+        }
+    }
+
+    private func applyBodyParameters(to request: inout URLRequest, _ endpoint: any Endpoint, _ url: URL) throws(NetworkError) {
+        request.httpBody = try endpoint.parameters?.data()
+    }
+
     private func applyQueryParameters(to request: inout URLRequest, _ endpoint: any Endpoint, _ url: URL) {
         if #available(iOS 16, macOS 13, *) {
             request.url?.append(queryItems: endpoint.parameters?.queryItems() ?? [])

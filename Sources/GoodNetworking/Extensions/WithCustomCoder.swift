@@ -9,7 +9,6 @@ import Foundation
 
 // MARK: - Encodable extensions
 
-@available(*, deprecated, message: "Prefer custom encode(to:) implementation instead where required")
 public protocol WithCustomEncoder {
     
     static var encoder: JSONEncoder { get }
@@ -18,7 +17,6 @@ public protocol WithCustomEncoder {
     
 }
 
-@available(*, deprecated, message: "Prefer custom encode(to:) implementation instead where required")
 public extension Encodable where Self: WithCustomEncoder {
     
     /// The `keyEncodingStrategy` property returns the default key encoding strategy of the `JSONEncoder`.
@@ -62,7 +60,6 @@ public extension Encodable where Self: WithCustomEncoder {
 
 // MARK: - Decodable extensions
 
-@available(*, deprecated, message: "Prefer custom init(from decoder:) implementation instead where required")
 public protocol WithCustomDecoder {
     
     static var decoder: JSONDecoder { get }
@@ -71,7 +68,6 @@ public protocol WithCustomDecoder {
     
 }
 
-@available(*, deprecated, message: "Prefer custom init(from decoder:) implementation instead where required")
 public extension Decodable where Self: WithCustomDecoder {
     
     /// Defines the `KeyDecodingStrategy` for all `Decodable WithCustomDecoder` objects using this extension.
