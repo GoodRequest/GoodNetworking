@@ -8,7 +8,7 @@
 import Foundation
 import GoodNetworking
 
-public actor SampleSelectableBaseUrlProvider: BaseUrlProviding, ObservableObject {
+public actor SampleSelectableBaseUrlProvider: URLConvertible, ObservableObject {
 
     // MARK: - Constants
 
@@ -53,8 +53,8 @@ public actor SampleSelectableBaseUrlProvider: BaseUrlProviding, ObservableObject
         }
     }
 
-    public func resolveBaseUrl() async -> String? {
-        return getSelectedServer().url
+    public func resolveUrl() async -> URL? {
+        return URL(string: getSelectedServer().url)
     }
 
 }

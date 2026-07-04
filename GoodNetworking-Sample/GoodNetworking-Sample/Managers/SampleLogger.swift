@@ -10,16 +10,16 @@ import GoodNetworking
 
 struct SampleLogger: NetworkLogger {
     
-    func logNetworkEvent(message: Any, level: LogLevel, fileName: String, lineNumber: Int) {
+    func logNetworkEvent(message: Any, level: LogLevel, file: String, line: Int) {
         switch level {
         case .debug:
-            print("[DEBUG] \(fileName):\(lineNumber) - \(message)")
+            print("[DEBUG] \(file):\(line) - \(message)")
         case .info:
-            print("[INFO] \(fileName):\(lineNumber) - \(message)")
+            print("[INFO] \(file):\(line) - \(message)")
         case .warning:
-            print("[WARNING] \(fileName):\(lineNumber) - \(message)")
+            print("[WARNING] \(file):\(line) - \(message)")
         case .error:
-            print("[ERROR] \(fileName):\(lineNumber) - \(message)")
+            print("[ERROR] \(file):\(line) - \(message)")
         }
     }
     

@@ -10,15 +10,15 @@ import Foundation
 
 extension NetworkSession {
 
-    static var sampleSession: NetworkSession!
+    @MainActor static var sampleSession: NetworkSession!
 
-    static func makeSampleSession() {
+    @MainActor static func makeSampleSession() {
         NetworkSession.sampleSession = NetworkSession(baseUrl: "https://reqres.in/api")
     }
 
-    static var baseURLProvider: SampleSelectableBaseUrlProvider?
+    @MainActor static var baseURLProvider: SampleSelectableBaseUrlProvider?
 
-    static func makeSampleAsyncSession() {
+    @MainActor static func makeSampleAsyncSession() {
         let prodServer = ApiServer(name: "Prod", url: "https://reqres.in/api")
 
         #if DEBUG
@@ -31,13 +31,16 @@ extension NetworkSession {
         )
         let urlProvider = SampleSelectableBaseUrlProvider(serverCollection: debugServerCollection)
         #else
-        let prodServerCollection = ApiServerCollection(servers: [prodServer], defaultServer: prodServer, name: "Production Collection")
-        let urlProvider = CustomBaseUrlProvider(serverCollection: prodServerCollection)
+        let prodServerCollection = ApiServerCollection(
+            name: "Production Collection",
+            servers: [prodServer],
+            defaultServer: prodServer
+        )
+        let urlProvider = SampleSelectableBaseUrlProvider(serverCollection: prodServerCollection)
         #endif
         baseURLProvider = urlProvider
         NetworkSession.sampleSession = NetworkSession(
             baseUrl: urlProvider,
-            configuration: .default(logger: SampleLogger()),
             logger: SampleLogger()
         )
     }
