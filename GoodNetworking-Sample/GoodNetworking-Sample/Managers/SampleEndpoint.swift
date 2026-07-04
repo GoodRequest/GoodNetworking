@@ -5,7 +5,6 @@
 //  Created by Filip Šašala on 17/07/2024.
 //
 
-import Alamofire
 import Foundation
 import GoodNetworking
 
@@ -17,22 +16,22 @@ enum SampleEndpoint: Endpoint {
     case updateUser(JobUser)
     case deleteUser(id: String)
 
-    var path: String {
+    var path: URLConvertible {
         switch self {
         case .listUsers:
-            "users"
+            "/users"
 
         case .singleUser(let id):
-            "users/\(id)"
+            "/users/\(id)"
 
         case .createUser:
-            "users"
+            "/users"
 
         case .updateUser(let user):
-            "users/\(user.id ?? "-")"
+            "/users/\(user.id ?? "-")"
 
         case .deleteUser(let id):
-            "users/\(id)"
+            "/users/\(id)"
         }
     }
 
@@ -58,8 +57,8 @@ enum SampleEndpoint: Endpoint {
             return nil
 
         case .listUsers(let page):
-            return .parameters([
-                "page": page
+            return .query([
+                URLQueryItem(name: "page", value: "\(page)")
             ])
 
         case .createUser(let user):
@@ -78,21 +77,6 @@ enum SampleEndpoint: Endpoint {
         default:
             nil
         }
-    }
-
-    var encoding: ParameterEncoding {
-        switch self {
-        case .updateUser:
-            JSONEncoding.default
-
-        default:
-            URLEncoding.default
-        }
-    }
-
-    func url(on baseUrl: String) throws -> URL {
-        let baseUrl = try baseUrl.asURL()
-        return baseUrl.appendingPathComponent(path)
     }
 
 }

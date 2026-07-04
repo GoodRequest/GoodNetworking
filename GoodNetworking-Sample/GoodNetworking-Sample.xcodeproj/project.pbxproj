@@ -21,7 +21,6 @@
 		5D4200142CBEE7ED006C4292 /* UserDefaultsExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4200132CBEE7ED006C4292 /* UserDefaultsExtensions.swift */; };
 		5D4200192CBF97CC006C4292 /* ServerPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4200182CBF97CC006C4292 /* ServerPickerView.swift */; };
 		5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967B299C190B00DFAEAE /* GoodNetworking */; };
-		5D4A967E299C190B00DFAEAE /* Mockable in Frameworks */ = {isa = PBXBuildFile; productRef = 5D4A967D299C190B00DFAEAE /* Mockable */; };
 		5D7C80652CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D7C80642CA2CDB900116E10 /* SampleSelectableBaseUrlProvider.swift */; };
 		5D9BD7322CBD19C100667B76 /* ApiServerCollection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9BD7312CBD19C100667B76 /* ApiServerCollection.swift */; };
 		5D9BD7332CBD19C100667B76 /* ApiServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D9BD7302CBD19C100667B76 /* ApiServer.swift */; };
@@ -58,7 +57,6 @@
 				09A9ECA12C48115A0032C359 /* GoodSwiftUI in Frameworks */,
 				09A9EC9D2C48115A0032C359 /* GRAsyncImage in Frameworks */,
 				09A9EC9F2C48115A0032C359 /* GRInputField in Frameworks */,
-				5D4A967E299C190B00DFAEAE /* Mockable in Frameworks */,
 				5D4A967C299C190B00DFAEAE /* GoodNetworking in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -179,7 +177,6 @@
 			name = "GoodNetworking-Sample";
 			packageProductDependencies = (
 				5D4A967B299C190B00DFAEAE /* GoodNetworking */,
-				5D4A967D299C190B00DFAEAE /* Mockable */,
 				09A9EC9C2C48115A0032C359 /* GRAsyncImage */,
 				09A9EC9E2C48115A0032C359 /* GRInputField */,
 				09A9ECA02C48115A0032C359 /* GoodSwiftUI */,
@@ -479,7 +476,7 @@
 			repositoryURL = "https://github.com/GoodRequest/GoodExtensions-iOS.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 2.0.0;
+				minimumVersion = 3.0.0;
 			};
 		};
 		09A9EC9B2C48115A0032C359 /* XCRemoteSwiftPackageReference "GoodSwiftUI" */ = {
@@ -487,7 +484,7 @@
 			repositoryURL = "https://github.com/GoodRequest/GoodSwiftUI.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.2.0;
+				minimumVersion = 1.5.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -516,10 +513,6 @@
 		5D4A967B299C190B00DFAEAE /* GoodNetworking */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = GoodNetworking;
-		};
-		5D4A967D299C190B00DFAEAE /* Mockable */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Mockable;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

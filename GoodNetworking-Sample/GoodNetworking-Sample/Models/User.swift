@@ -94,7 +94,7 @@ struct RemoteUser: Readable {
     }
 
     nonisolated static func request(from resource: Resource?) throws(NetworkError) -> ReadRequest? {
-        guard let resource else { throw .missingLocalData }
+        guard let resource else { throw URLError(.cannotEncodeRawData).asNetworkError() }
         return UserRequest(id: resource.id)
     }
 
