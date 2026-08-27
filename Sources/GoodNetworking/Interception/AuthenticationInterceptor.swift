@@ -69,17 +69,23 @@ public final class AuthenticationInterceptor<AuthenticatorType: Authenticator>: 
     }
 
     private func refresh(credential: AuthenticatorType.Credential) async throws(NetworkError) {
-        // Current credential must be expired at this point
-        // and is safe to clear
-        await authenticator.storeCredential(nil)
-
-        // Refresh the expired credential and store new credential
-        // Let user handle remote errors (eg. HTTP 403) before throwing
-        // (eg. kick user from session, or automatically log out).
+        // The credential is deliberately left in storage until a replacement exists.
+        //
+        // A refresh is driven by the backend rejecting a request, which says nothing about
+        // whether the credential is expired — a revoked session, a rotated token, a 429 or a
+        // dropped connection all look the same from here. And even on a genuine expiry only
+        // the access half is spent; the refresh half is what recovers the session. Clearing
+        // up front therefore turns any transient failure into a permanent sign-out, with no
+        // stored credential left to retry with.
+        //
+        // Nothing can read a stale credential in the meantime: both `adapt` and `retry` hold
+        // `lock` across this call, so the clear was never protecting against that.
         do {
             let newCredential = try await authenticator.refresh(credential: credential)
             await authenticator.storeCredential(newCredential)
         } catch let error {
+            // Let the authenticator decide whether the credential is now worthless — it is
+            // the only party that knows what its backend's failures mean.
             if case .remote(let httpError) = error {
                 await authenticator.refresh(didFailDueToError: httpError)
             }
